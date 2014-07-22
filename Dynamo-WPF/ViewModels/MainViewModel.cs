@@ -1,7 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
 
-namespace Dynamo_WPF
+namespace Dynamo.UI.Wpf.ViewModels
 {
 	public class MainViewModel : INotifyPropertyChanged
 	{

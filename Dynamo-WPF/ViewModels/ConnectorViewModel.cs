@@ -4,7 +4,7 @@ using System.Text;
 using System.Windows.Data;
 using System.ComponentModel;
 
-namespace Dynamo_WPF
+namespace Dynamo.UI.Wpf.ViewModels
 {
 	public class ConnectorViewModel : INotifyPropertyChanged
 	{

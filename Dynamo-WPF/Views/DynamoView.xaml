@@ -1,0 +1,368 @@
+﻿<UserControl
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    
+    xmlns:ad="http://schemas.xceed.com/wpf/xaml/avalondock"
+    
+    xmlns:vm="clr-namespace:Dynamo.UI.Wpf.ViewModels"
+    xmlns:views="clr-namespace:Dynamo.UI.Wpf.Views"
+    
+    x:Class="Dynamo.UI.Wpf.Views.DynamoView" x:Name="Self"
+    d:DesignWidth="640" d:DesignHeight="480">
+
+    <Grid x:Name="MainGrid"
+          d:DataContext="{d:DesignData /SampleData/DynamoViewModelSampleData.xaml}">
+
+        <Grid.Resources>
+            <DataTemplate DataType="{x:Type vm:WorkspaceViewModel}">
+                <views:WorkspaceView />
+            </DataTemplate>
+        </Grid.Resources>
+        
+        <Grid.InputBindings> <!-- TODO: Populate with binding, share with Menu -->
+            <KeyBinding Key="Tab"                           Command="{Binding SelectNeighborsCommand}" />
+            <KeyBinding Key="N"   Modifiers="Control"       Command="{Binding NewHomeWorkspaceCommand}" />
+            <KeyBinding Key="N"   Modifiers="Control+Shift" Command="{Binding ShowNewFunctionDialogCommand}" />
+            <KeyBinding Key="R"   Modifiers="Control+Shift" Command="{Binding SaveRecordedCommand}" />
+            <KeyBinding Key="Q"   Modifiers="Control+Shift" Command="{Binding InsertPausePlaybackCommand}" />
+            <KeyBinding Key="L"   Modifiers="Control"       Command="{Binding GraphAutoLayoutCommand}" />
+            <KeyBinding Key="C"   Modifiers="Control"       Command="{Binding CopyCommand}" />
+            <KeyBinding Key="X"   Modifiers="Control"       Command="{Binding CutCommand}" />
+            <KeyBinding Key="V"   Modifiers="Control"       Command="{Binding PasteCommand}" />
+            <KeyBinding Key="Z"   Modifiers="Control"       Command="{Binding UndoCommand}" />
+            <KeyBinding Key="Z"   Modifiers="Control+Shift" Command="{Binding RedoCommand}" />
+            <KeyBinding Key="Y"   Modifiers="Control"       Command="{Binding RedoCommand}" />
+            <KeyBinding Key="A"   Modifiers="Control"       Command="{Binding SelectAllCommand}" />
+            <KeyBinding Key="D"   Modifiers="Control"       Command="{Binding NodeFromSelectionCommand}" />
+            <KeyBinding Key="G"   Modifiers="Control"       Command="{Binding ToggleCanNavigateBackgroundCommand}" />
+            <KeyBinding Key="W"   Modifiers="Control"       Command="{Binding AddNoteCommand}" />
+            <KeyBinding Key="V"   Modifiers="Control"       Command="{Binding PasteCommand}" />
+            <KeyBinding Key="S"   Modifiers="Control"       Command="{Binding ShowSaveDialogIfNeededAndSaveResultCommand}" />
+            <KeyBinding Key="S"   Modifiers="Control+Shift" Command="{Binding ShowSaveDialogAndSaveResultCommand}" />
+            <KeyBinding Key="O"   Modifiers="Control"       Command="{Binding ShowOpenDialogAndOpenResultCommand}" />
+            <KeyBinding Key="H"   Modifiers="Control"       Command="{Binding HomeCommand}" />
+            <KeyBinding Key="Up"  Modifiers="Control+Shift" Command="{Binding ToggleConsoleShowingCommand}" />
+            <KeyBinding Key="F4"  Modifiers="Alt"           Command="{Binding ExitCommand}" />
+            
+            <KeyBinding Key="Left"  Modifiers="Ctrl+Alt" CommandParameter="Left"  Command="{Binding PanCommand}" />
+            <KeyBinding Key="Right" Modifiers="Ctrl+Alt" CommandParameter="Right" Command="{Binding PanCommand}" />
+            <KeyBinding Key="Up"    Modifiers="Ctrl+Alt" CommandParameter="Up"    Command="{Binding PanCommand}" />
+            <KeyBinding Key="Down"  Modifiers="Ctrl+Alt" CommandParameter="Down"  Command="{Binding PanCommand}" />
+            
+            <KeyBinding Key="OemPlus"  Modifiers="Ctrl" Command="{Binding ZoomInCommand}" />
+            <KeyBinding Key="OemMinus" Modifiers="Ctrl" Command="{Binding ZoomOutCommand}" />
+            <KeyBinding Key="D0"       Modifiers="Ctrl" Command="{Binding FitViewCommand}" />
+            <KeyBinding Key="P"        Modifiers="Ctrl" Command="{Binding TogglePanCommand}" />
+            
+            <KeyBinding Key="F5" CommandParameter="{Binding RunInDebug}" Command="{Binding RunExpressionCommand}" />
+        </Grid.InputBindings>
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="20"/>
+        </Grid.RowDefinitions>
+
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" MaxWidth="500"/>
+            <!--MinWidth fix for GridSplitter dragging in frameless window-->
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*"/>			
+        </Grid.ColumnDefinitions>
+
+        <!--Titlebar-->
+        <Border Name="TitleBar"
+                Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3"
+                BorderBrush="#FF3F4040" BorderThickness="0,0,0,1"
+                Height="26">
+            
+            <Grid Name="TitleBarGrid">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!--Menu-->
+                <Menu IsMainMenu="True" Name="Menu1"> <!-- TODO Style="{StaticResource MainMenu}">-->
+                    <MenuItem Header="_File" Name="fileMenu" Focusable="False">
+                        <MenuItem Header="_New" Name="newMenu" Focusable="False">
+                            <MenuItem Header="_Home Workspace..." Command="{Binding NewHomeWorkspaceCommand}" InputGestureText="Ctrl + N" Focusable="False" />
+                            <MenuItem Header="_Custom Node..." Command="{Binding ShowNewFunctionDialogCommand}"  InputGestureText="Ctrl + Shift + N" Focusable="False" />
+                        </MenuItem>
+                        <MenuItem Header="_Open..." Command="{Binding ShowOpenDialogAndOpenResultCommand}" InputGestureText="Ctrl + O" Focusable="False">
+                            <!-- TODO
+                            <MenuItem.Icon>
+                                <Image Source="/DynamoCore;component/UI/Images/openHS.png" Width="14" Height="14" />
+                            </MenuItem.Icon>
+                            -->
+                        </MenuItem>
+                        <Separator />
+                        <MenuItem Header="_Save" Command="{Binding ShowSaveDialogIfNeededAndSaveResultCommand}" Name="saveThisButton" InputGestureText="Ctrl + S" Focusable="False">
+                            <!-- TODO
+                            <MenuItem.Icon>
+                                <Image Source="/DynamoCore;component/UI/Images/saveHS.png" Width="14" Height="14" />
+                            </MenuItem.Icon>
+                            -->
+                        </MenuItem>
+                        <MenuItem Focusable="False" Header="_Save As..." Command="{Binding ShowSaveDialogAndSaveResultCommand}" Name="saveButton" InputGestureText="Ctrl + Shift + S"> <!--TODO IsEnabled="{Binding IsUILocked, Converter={StaticResource InverseBooleanConverter}}">-->
+                            <!-- TODO
+                            <MenuItem.Icon>
+                                <Image Source="/DynamoCore;component/UI/Images/saveHS.png" Width="14" Height="14" />
+                            </MenuItem.Icon>
+                            -->
+                        </MenuItem>
+                        <MenuItem Focusable="False" Header="_Export Workspace As Image..." Command="{Binding ShowSaveImageDialogAndSaveResultCommand}" Name="saveImage">
+                            <!-- TODO
+                            <MenuItem.Icon>
+                                <Image Source="/DynamoCore;component/UI/Images/screenshot_normal.png" Width="14" Height="14"/>
+                            </MenuItem.Icon>
+                            -->
+                        </MenuItem>
+                        <MenuItem Focusable="False" Header="_Export Model to STL..." Command="{Binding ExportToSTLCommand}" Name="saveSTL" />
+
+                        <Separator />
+                        
+                        <MenuItem Header="_Recent Files" ItemsSource="{Binding RecentFiles}">
+                            <MenuItem.ItemContainerStyle>
+                                <Style TargetType="MenuItem">
+                                    <!-- TODO 
+                                    <Setter Property="Header" Value="{Binding Converter={StaticResource FilePathDisplayConverter}}" />
+                                    -->
+                                    <Setter Property="Command" Value="{Binding DataContext.OpenRecentCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type MenuItem}, AncestorLevel=1}}" />
+                                    <Setter Property="CommandParameter" Value="{Binding}" />
+                                </Style>
+                            </MenuItem.ItemContainerStyle>
+                        </MenuItem>
+
+                        <Separator />
+
+                        <MenuItem Header="_Exit" Command="{Binding ExitCommand}"  Name="exit" InputGestureText="Alt + F4" Focusable="False"/>
+                    </MenuItem>
+
+                    <MenuItem Header="_Edit" Name="editMenu" Focusable="False">
+                        <MenuItem Focusable="False" Header="_Undo" Command="{Binding UndoCommand}" Name="undo" InputGestureText="Ctrl+Z"/>
+                        <MenuItem Focusable="False" Header="_Redo" Command="{Binding RedoCommand}"  Name="redo" InputGestureText="Ctrl+Y"/>
+                        <Separator/>
+                        <MenuItem Focusable="False" Header="_Copy" Command="{Binding CopyCommand}" Name="copy" InputGestureText="Ctrl + C"/>
+                        <MenuItem Focusable="False" Header="_Paste" Command="{Binding PasteCommand}"  Name="paste" InputGestureText="Ctrl + V"/>
+                        <Separator/>
+                        <MenuItem Focusable="False" Header="_Create Note" Command="{Binding AddNoteCommand}"  Name="noteMenuItem" InputGestureText="Ctrl + W" />
+                        <MenuItem Focusable="False" Header="_Create Node From Selection" Command="{Binding Path=CurrentSpaceViewModel.NodeFromSelectionCommand}"  Name="nodeFromSelection" InputGestureText="Ctrl + D"/>
+                        <MenuItem Focusable="False" Header="_Select All" Command="{Binding SelectAllCommand}"  Name="selectAll" InputGestureText="Ctrl + A"/>
+                        <MenuItem Focusable="False" Header="_Delete Selected" Command="{Binding DeleteCommand}"  Name="deleteSelected" InputGestureText="Delete"/>
+                        <MenuItem  Header="_Align Selection"  Name="Align">
+                            <MenuItem  Header="_X Average"  Command="{Binding AlignSelectedCommand}" CommandParameter="HorizontalCenter" Focusable="False"/>
+                            <MenuItem  Header="_Left" Command="{Binding AlignSelectedCommand}" CommandParameter="HorizontalLeft" Focusable="False"/>
+                            <MenuItem  Header="_Right" Command="{Binding AlignSelectedCommand}" CommandParameter="HorizontalRight" Focusable="False"/>
+                            <MenuItem  Header="_Y Average" Command="{Binding AlignSelectedCommand}" CommandParameter="VerticalCenter" Focusable="False"/>
+                            <MenuItem  Header="_Top" Command="{Binding AlignSelectedCommand}" CommandParameter="VerticalTop" Focusable="False"/>
+                            <MenuItem  Header="_Bottom" Command="{Binding AlignSelectedCommand}" CommandParameter="VerticalBottom" Focusable="False"/>
+                            <MenuItem  Header="_Y Distribute" Command="{Binding AlignSelectedCommand}" CommandParameter="VerticalDistribute" Focusable="False"/>
+                            <MenuItem  Header="_X Distribute" Command="{Binding AlignSelectedCommand}" CommandParameter="HorizontalDistribute" Focusable="False"/>
+                        </MenuItem>
+                        <Separator/>
+                        <MenuItem Focusable="False" Header="_Cleanup Node Layout" Command="{Binding GraphAutoLayoutCommand}" Name="GraphAutoLayout" InputGestureText="Ctrl + L"/>
+                    </MenuItem>
+
+                    <MenuItem Header="_View" Name="viewMenu" Focusable="False">
+                        <MenuItem Header="_Zoom" Name="zoomMenu">
+                            <MenuItem  Header="Zoom In (Mouse wheel down)"  Command="{Binding ZoomInCommand}" InputGestureText="Ctrl + ="/>
+                            <MenuItem  Header="Zoom Out (Mouse wheel up)" Command="{Binding ZoomOutCommand}" InputGestureText="Ctrl + -"/>
+                        </MenuItem>
+
+                        <MenuItem Header="_Pan" Name="panMenu">
+                            <MenuItem  Header="Pan Left (Mouse wheel drag left)"  Command="{Binding PanCommand}" CommandParameter="Left" InputGestureText="Ctrl + Alt + Left"/>
+                            <MenuItem  Header="Pan Right (Mouse wheel drag right)" Command="{Binding PanCommand}" CommandParameter="Right" InputGestureText="Ctrl + Alt + Right"/>
+                            <MenuItem  Header="Pan Up (Mouse wheel drag up)"  Command="{Binding PanCommand}" CommandParameter="Up" InputGestureText="Ctrl + Alt + Up"/>
+                            <MenuItem  Header="Pan Down (Mouse wheel drag down)" Command="{Binding PanCommand}" CommandParameter="Down" InputGestureText="Ctrl + Alt + Down"/>
+                        </MenuItem>    
+
+                        <!-- TODO
+                        <MenuItem Header="{Binding ConsoleHeight, Converter={StaticResource ShowHideConsoleMenuConverter}}" Command="{Binding ToggleConsoleShowingCommand}" InputGestureText="Ctrl + Shift + Up"/>
+                        -->
+
+                        <MenuItem Header="_Connectors" Name="connectorMenu">
+                            <MenuItem Focusable="False" Header="_Connector Type" IsEnabled="True">
+                                <MenuItem Focusable="False" Name="settings_curves" IsCheckable="True" /> <!--TODO IsChecked="{Binding Path=ConnectorType,Converter={StaticResource EnumToBoolConverter},ConverterParameter=BEZIER, Mode=TwoWay}" Command="{Binding SetConnectorTypeCommand}" CommandParameter="BEZIER" Header="Curves"/>-->
+                                <MenuItem Name="settings_plines" IsCheckable="True" /> <!--TODO IsChecked="{Binding Path=ConnectorType,Converter={StaticResource EnumToBoolConverter},ConverterParameter=POLYLINE, Mode=TwoWay}" Command="{Binding SetConnectorTypeCommand}" CommandParameter="POLYLINE" Header="Polylines"/>-->
+                            </MenuItem>
+                            <MenuItem Focusable="False" Header="_Show Connectors" IsCheckable="True" Name="ShowHideConnectorsMenuItem" IsChecked="{Binding Path=IsShowingConnectors}" Command="{Binding ShowHideConnectorsCommand}">
+                            </MenuItem>
+                        </MenuItem>
+                        
+                        <MenuItem Header="_Background 3D Preview" Name="background3dMenu" Focusable="False">
+                            <!-- TODO
+                            <MenuItem Header="{Binding Path=FullscreenWatchShowing, Converter={StaticResource ShowHideFullscreenWatchMenuConverter}}" 
+                                      IsChecked="{Binding Path=FullscreenWatchShowing}" Command="{Binding ToggleFullscreenWatchShowingCommand}"  Focusable="False"/>
+                            -->
+                            <MenuItem Header="Navigate Background 3D Preview"
+                                          IsEnabled="{Binding Path=FullscreenWatchShowing}"
+                                          IsChecked="{Binding Path=CanNavigateBackground}"
+                                          InputGestureText="Ctrl + G"
+                                          Focusable="False"
+                                          Command="{Binding ToggleCanNavigateBackgroundCommand}"/>
+                        </MenuItem>
+                    </MenuItem>
+
+                    <MenuItem Header="_Libraries" Name="LibraryManagerMenu" Focusable="False" IsEnabled="True">
+                        <MenuItem Focusable="False" Header="_Import Library..." Command="{Binding ImportLibraryCommand}" />  
+                    </MenuItem>
+                    
+                    <MenuItem Header="_Packages" Name="PackageManagerMenu" Focusable="False" IsEnabled="True">
+                        <MenuItem Focusable="False" Header="_Search for a Package..." Command="{Binding ShowPackageManagerSearchCommand}" />
+                        <MenuItem Focusable="False" Header="_Manage Packages..." Command="{Binding ShowInstalledPackagesCommand}" />
+                        <MenuItem Focusable="False" Header="_Publish Selected Nodes..." Command="{Binding PublishSelectedNodesCommand}" />
+                        <MenuItem Focusable="False" Header="_Publish Current Workspace..." Command="{Binding PublishCurrentWorkspaceCommand}" />
+                    </MenuItem>
+
+                    <MenuItem Header="_Settings" Name="SettingsMenu" Focusable="False" IsEnabled="True">
+                        <MenuItem Header="_Enable detailed usability data reporting"
+                                  Name="ToggleIsUsageReportingApprovedCommand"
+                                  Command="{Binding Path=ToggleIsUsageReportingApprovedCommand}"
+                                  IsChecked="{Binding IsUsageReportingApproved, Mode=OneWay}"
+                                  ToolTip="Detailed reporting sends behaviour data that we use for improving Dynamo.&#x0a;It includes the graph being created as well as errors and warnings"
+                                  Focusable="False"/>
+                        <MenuItem Header="Enable anonymous summary reporting"
+                                  Name="ToggleIsAnalyticsReportingApprovedCommand"
+                                  Command="{Binding ToggleIsAnalyticsReportingApprovedCommand}"
+                                  IsChecked="{Binding IsAnalyticsReportingApproved, Mode=OneWay}"
+                                  ToolTip="Anonymous summary reporting sends a minimal set of data for computing user counts, stability and performance metrics.&#x0a;It does not contain your graph or any personal data"
+                                  Focusable="False"/>
+                        
+                        <!-- TODO
+                        <MenuItem Focusable="False" Header="Length Display Units" Name="LengthUnitsMenu">
+                            <MenuItem Focusable="False" Name="units_inch_1" IsCheckable="True" IsChecked="{Binding Controller.PreferenceSettings.LengthUnit,Converter={StaticResource EnumToBoolConverter},ConverterParameter=DecimalInch, Mode=TwoWay}" Command="{Binding SetLengthUnitCommand}" CommandParameter="DecimalInch" Header="Decimal Inch"/>
+                            <MenuItem Focusable="False" Name="units_inch_2" IsCheckable="True" IsChecked="{Binding Controller.PreferenceSettings.LengthUnit,Converter={StaticResource EnumToBoolConverter},ConverterParameter=FractionalInch, Mode=TwoWay}" Command="{Binding SetLengthUnitCommand}" CommandParameter="FractionalInch" Header="Fractional Inch"/>
+                            <MenuItem Focusable="False" Name="units_foot_1" IsCheckable="True" IsChecked="{Binding Controller.PreferenceSettings.LengthUnit,Converter={StaticResource EnumToBoolConverter},ConverterParameter=DecimalFoot, Mode=TwoWay}" Command="{Binding SetLengthUnitCommand}" CommandParameter="DecimalFoot" Header="Decimal Foot"/>
+                            <MenuItem Focusable="False" Name="units_foot_2" IsCheckable="True" IsChecked="{Binding Controller.PreferenceSettings.LengthUnit,Converter={StaticResource EnumToBoolConverter},ConverterParameter=FractionalFoot, Mode=TwoWay}" Command="{Binding SetLengthUnitCommand}" CommandParameter="FractionalFoot" Header="Fractional Foot"/>
+                            <MenuItem Focusable="False" Name="units_mm" IsCheckable="True" IsChecked="{Binding Controller.PreferenceSettings.LengthUnit,Converter={StaticResource EnumToBoolConverter},ConverterParameter=Millimeter, Mode=TwoWay}" Command="{Binding SetLengthUnitCommand}" CommandParameter="Millimeter" Header="Millimeter"/>
+                            <MenuItem Focusable="False" Name="units_cm" IsCheckable="True" IsChecked="{Binding Controller.PreferenceSettings.LengthUnit,Converter={StaticResource EnumToBoolConverter},ConverterParameter=Centimeter, Mode=TwoWay}" Command="{Binding SetLengthUnitCommand}" CommandParameter="Centimeter" Header="Centimeter"/>
+                            <MenuItem Focusable="False" Name="units_m" IsCheckable="True" IsChecked="{Binding Controller.PreferenceSettings.LengthUnit,Converter={StaticResource EnumToBoolConverter},ConverterParameter=Meter, Mode=TwoWay}" Command="{Binding SetLengthUnitCommand}" CommandParameter="Meter" Header="Meter"/>
+                        </MenuItem>
+                        <MenuItem Focusable="False" Header="Area Display Units" Name="AreaUnitsMenu">
+                            <MenuItem Focusable="False" Name="units_area_inch" IsCheckable="True" IsChecked="{Binding Controller.PreferenceSettings.AreaUnit,Converter={StaticResource EnumToBoolConverter},ConverterParameter=SquareInch, Mode=TwoWay}" Command="{Binding SetAreaUnitCommand}" CommandParameter="SquareInch" Header="Square Inch"/>
+                            <MenuItem Focusable="False" Name="units_area_foot" IsCheckable="True" IsChecked="{Binding Controller.PreferenceSettings.AreaUnit,Converter={StaticResource EnumToBoolConverter},ConverterParameter=SquareFoot, Mode=TwoWay}" Command="{Binding SetAreaUnitCommand}" CommandParameter="SquareFoot" Header="Square Foot"/>
+                            <MenuItem Focusable="False" Name="units_area_millimeter" IsCheckable="True" IsChecked="{Binding Controller.PreferenceSettings.AreaUnit,Converter={StaticResource EnumToBoolConverter},ConverterParameter=SquareMillimeter, Mode=TwoWay}" Command="{Binding SetAreaUnitCommand}" CommandParameter="SquareMillimeter" Header="Square Millimeter"/>
+                            <MenuItem Focusable="False" Name="units_area_centimeter" IsCheckable="True" IsChecked="{Binding Controller.PreferenceSettings.AreaUnit,Converter={StaticResource EnumToBoolConverter},ConverterParameter=SquareCentimeter, Mode=TwoWay}" Command="{Binding SetAreaUnitCommand}" CommandParameter="SquareCentimeter" Header="Square Centimeter"/>
+                            <MenuItem Focusable="False" Name="units_area_meter" IsCheckable="True" IsChecked="{Binding Controller.PreferenceSettings.AreaUnit,Converter={StaticResource EnumToBoolConverter},ConverterParameter=SquareMeter, Mode=TwoWay}" Command="{Binding SetAreaUnitCommand}" CommandParameter="SquareMeter" Header="Square Meter"/>
+                        </MenuItem>
+                        <MenuItem Focusable="False" Header="Volume Display Units" Name="VolumeUnitsMenu">
+                            <MenuItem Focusable="False" Name="units_volume_inch" IsCheckable="True" IsChecked="{Binding Controller.PreferenceSettings.VolumeUnit,Converter={StaticResource EnumToBoolConverter},ConverterParameter=CubicInch, Mode=TwoWay}" Command="{Binding SetVolumeUnitCommand}" CommandParameter="CubicInch" Header="Cubic Inch"/>
+                            <MenuItem Focusable="False" Name="units_volume_foot" IsCheckable="True" IsChecked="{Binding Controller.PreferenceSettings.VolumeUnit,Converter={StaticResource EnumToBoolConverter},ConverterParameter=CubicFoot, Mode=TwoWay}" Command="{Binding SetVolumeUnitCommand}" CommandParameter="CubicFoot" Header="Cubic Foot"/>
+                            <MenuItem Focusable="False" Name="units_volume_millimeter" IsCheckable="True" IsChecked="{Binding Controller.PreferenceSettings.VolumeUnit,Converter={StaticResource EnumToBoolConverter},ConverterParameter=CubicMillimeter, Mode=TwoWay}" Command="{Binding SetVolumeUnitCommand}" CommandParameter="CubicMillimeter" Header="Cubic Millimeter"/>
+                            <MenuItem Focusable="False" Name="units_volume_centimeter" IsCheckable="True" IsChecked="{Binding Controller.PreferenceSettings.VolumeUnit,Converter={StaticResource EnumToBoolConverter},ConverterParameter=CubicCentimeter, Mode=TwoWay}" Command="{Binding SetVolumeUnitCommand}" CommandParameter="CubicCentimeter" Header="Cubic Centimeter"/>
+                            <MenuItem Focusable="False" Name="units_volume_meter" IsCheckable="True" IsChecked="{Binding Controller.PreferenceSettings.VolumeUnit,Converter={StaticResource EnumToBoolConverter},ConverterParameter=CubicMeter, Mode=TwoWay}" Command="{Binding SetVolumeUnitCommand}" CommandParameter="SquareMeter" Header="Cubic Meter"/>
+                        </MenuItem>
+                        <MenuItem Focusable="False" Header="Number Format" Name="NumberFormat">
+                            <MenuItem Focusable="False" Header="0" IsCheckable="True" IsChecked="{Binding Controller.PreferenceSettings.NumberFormat,Converter={StaticResource NumberFormatToBoolConverter},ConverterParameter=f0, Mode=TwoWay}" Command="{Binding SetNumberFormatCommand}" CommandParameter="f0"/>
+                            <MenuItem Focusable="False" Header="0.0" IsCheckable="True" IsChecked="{Binding Controller.PreferenceSettings.NumberFormat,Converter={StaticResource NumberFormatToBoolConverter},ConverterParameter=f1, Mode=TwoWay}" Command="{Binding SetNumberFormatCommand}" CommandParameter="f1"/>
+                            <MenuItem Focusable="False" Header="0.00" IsCheckable="True" IsChecked="{Binding Controller.PreferenceSettings.NumberFormat,Converter={StaticResource NumberFormatToBoolConverter},ConverterParameter=f2, Mode=TwoWay}" Command="{Binding SetNumberFormatCommand}" CommandParameter="f2"/>
+                            <MenuItem Focusable="False" Header="0.000" IsCheckable="True" IsChecked="{Binding Controller.PreferenceSettings.NumberFormat,Converter={StaticResource NumberFormatToBoolConverter},ConverterParameter=f3, Mode=TwoWay}" Command="{Binding SetNumberFormatCommand}" CommandParameter="f3"/>
+                            <MenuItem Focusable="False" Header="0.0000" IsCheckable="True" IsChecked="{Binding Controller.PreferenceSettings.NumberFormat,Converter={StaticResource NumberFormatToBoolConverter},ConverterParameter=f4, Mode=TwoWay}" Command="{Binding SetNumberFormatCommand}" CommandParameter="f4"/>
+                        </MenuItem>
+                        -->
+
+                        <MenuItem Focusable="False" Header="Render Precision">
+                            <StackPanel Orientation="Horizontal" Width="Auto">
+                                <TextBlock Text="Low" Margin="0,0,10,0" />
+                                <Slider Width ="100" Minimum="12" Maximum="512" Value="{Binding MaxTesselationDivisions}" />
+                                <TextBlock Text="High" Margin="10,0,0,0" />
+                            </StackPanel>
+                        </MenuItem>
+                    </MenuItem>
+                    
+                    <MenuItem Header="Help" Focusable="False">
+                        <MenuItem Focusable="False" Header="Samples" Name="SamplesMenu">
+                            <!-- TODO
+                            <MenuItem.Icon>
+                                <Image Source="/DynamoCore;component/UI/Images/OpenSelectedItemHS.png" Width="14" Height="14" />
+                            </MenuItem.Icon>
+                            -->
+                        </MenuItem>
+                        <MenuItem Header="_Report A Bug" Command="{Binding ReportABugCommand}" Focusable="False"/>
+                        <MenuItem Header="_Go To Project Website" Command="{Binding GoToSourceCodeCommand}" Focusable="False"/>
+                        <MenuItem Header="Go To Project _Wiki" Command="{Binding GoToWikiCommand}" Focusable="False"/>
+                        <MenuItem Header="_Display Start Page" Command="{Binding DisplayStartPageCommand}" Focusable="False"/>
+                        <MenuItem Header="_About..." Command="{Binding ShowAboutWindowCommand}" Focusable="False" />
+                    </MenuItem>
+
+                    <MenuItem Header="Debug" Focusable="False" > <!--Visibility="{Binding IsDebugBuild, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}">-->
+                        <MenuItem Focusable="False" Name="VerboseLogging" IsCheckable="True" IsChecked="{Binding VerboseLogging}" Header="Verbose Logging" />
+                        <MenuItem Focusable="False" Name="ShowDebugASTs" IsCheckable="True" Header ="Show Debug ASTs" IsChecked="{Binding ShowDebugASTs}" />
+                        <MenuItem Focusable="False" Name="ForceReexec" Header="Force Re-execute" 
+                                  Command="{Binding ForceRunExpressionCommand}" 
+                                  CommandParameter="{Binding RunInDebug}" 
+                                  IsEnabled="{Binding RunEnabled, Mode=TwoWay}" />
+                        <MenuItem Focusable="False" Name="MutateTest" Header="Run mutation test" 
+                                  Command="{Binding MutateTestDelegateCommand}"
+                                  CommandParameter="{Binding RunInDebug}"
+                                  IsEnabled="{Binding RunEnabled}" />
+                        <MenuItem Focusable="False" Name="CheckDailyBuilds" Header="Check Daily Builds" IsCheckable="True" IsChecked="{Binding CheckNewerDailyBuilds}" />
+                        <MenuItem Focusable="False" Name="ForceUpdate" Header="Force Update" IsCheckable="True" IsChecked="{Binding ForceUpdate}" />
+                        <!--TODO
+                        <MenuItem Header ="{Binding AlternateContextGeometryDisplayText}" 
+                                  Name="showGeometryInAlternateContextMenu" 
+                                  Focusable="False" 
+                                  Visibility="{Binding Path=AlternateDrawingContextAvailable, Converter={StaticResource BooleanToVisibilityCollapsedConverter}, Mode=OneWay}"
+                                  IsCheckable="True"
+                                  IsChecked="{Binding DrawToAlternateContext}">
+                        </MenuItem>
+                        -->
+                    </MenuItem>
+                </Menu>
+
+                <!--Titlebar buttons-->
+                <Grid Name="titleBarButtonsGrid" Grid.Column="1"></Grid>
+
+            </Grid>
+        </Border>
+
+        <!--Shortcuts Toolbar-->
+        <Border Name="shortcutBarBorder"
+                Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3"
+                Height="32" BorderBrush="#FF3F4040" BorderThickness="0,0,0,1">
+            <Grid Name="shortcutBarGrid">
+                <!-- TODO: Add Shortcuts -->
+            </Grid>
+        </Border>
+        
+        <!--
+        <ContentPresenter HorizontalAlignment="Stretch" VerticalAlignment="Stretch" 
+                          Grid.Column="2" Grid.Row="2" Grid.RowSpan="3"
+                          Content="{Binding CurrentWorkspace}"/>
+        -->
+        
+        <!-- TODO: Drag + Drop goes here -->
+        <ad:DockingManager Grid.Row="2" Grid.Column="2" 
+                           AnchorablesSource="{Binding Sidebars}" 
+                           DocumentsSource="{Binding Workspaces}"
+                           LayoutUpdateStrategy="{Binding ElementName=Self, Path=LayoutStrategy}">
+            
+            <ad:DockingManager.LayoutItemContainerStyle>
+                <Style TargetType="{x:Type ad:LayoutItem}">
+                    <Setter Property="Title" Value="{Binding Model.Name}" />
+                </Style>
+            </ad:DockingManager.LayoutItemContainerStyle>
+            
+            <ad:LayoutRoot>
+                <ad:LayoutRoot.RootPanel>
+                    <ad:LayoutPanel Orientation="Horizontal">
+                        <ad:LayoutAnchorablePane x:Name="LeftToolbar" DockWidth="200" />
+                        <ad:LayoutPanel Orientation="Vertical">
+                            <ad:LayoutDocumentPane   x:Name="WorkspacesPane" />
+                            <ad:LayoutAnchorablePane x:Name="BottomToolbar" DockHeight="200" />
+                        </ad:LayoutPanel>
+                        <ad:LayoutAnchorablePane x:Name="RightToolbar" DockWidth="200" />
+                    </ad:LayoutPanel>
+                </ad:LayoutRoot.RootPanel>
+            </ad:LayoutRoot>
+            
+        </ad:DockingManager>
+        
+        
+    </Grid>
+</UserControl>

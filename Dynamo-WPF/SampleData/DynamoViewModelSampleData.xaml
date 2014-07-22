@@ -1,0 +1,7 @@
+﻿<vm:DynamoViewModel xmlns:vm="clr-namespace:Dynamo.UI.Wpf.ViewModels">
+    <vm:DynamoViewModel.Workspaces>
+        <vm:WorkspaceViewModel Name="Workspace 1"></vm:WorkspaceViewModel>
+        <vm:WorkspaceViewModel Name="Workspace 2"></vm:WorkspaceViewModel>
+        <vm:WorkspaceViewModel Name="Workspace 3"></vm:WorkspaceViewModel>
+    </vm:DynamoViewModel.Workspaces>
+</vm:DynamoViewModel>

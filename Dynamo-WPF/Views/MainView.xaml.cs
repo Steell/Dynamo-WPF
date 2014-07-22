@@ -8,7 +8,7 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Shapes;
 
-namespace Dynamo_WPF
+namespace Dynamo.UI.Wpf.Views
 {
 	public partial class MainView : UserControl
 	{

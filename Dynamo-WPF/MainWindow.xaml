@@ -1,13 +1,13 @@
 ﻿<Window
 	xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
 	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-	x:Class="Dynamo_WPF.MainWindow"
+	x:Class="Dynamo.UI.Wpf.MainWindow"
 	x:Name="Window"
-	xmlns:local="clr-namespace:Dynamo_WPF" 
+	xmlns:views="clr-namespace:Dynamo.UI.Wpf.Views" 
 	Title="MainWindow"
 	Width="640" Height="480">
 
 	<Grid x:Name="LayoutRoot" Background="White">
-	<local:MainView />
+		<views:DynamoView />
 	</Grid>
 </Window>

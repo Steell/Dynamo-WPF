@@ -5,16 +5,16 @@
 	xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 	xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
 	xmlns:ic="http://schemas.microsoft.com/expression/2010/interactions"
-	xmlns:local="clr-namespace:Dynamo_WPF"
+	xmlns:vm="clr-namespace:Dynamo.UI.Wpf.ViewModels"
 	mc:Ignorable="d"
-	x:Class="Dynamo_WPF.MainView"
+	x:Class="Dynamo.UI.Wpf.Views.MainView"
 	d:DesignWidth="640" d:DesignHeight="480">
 	
 	<UserControl.Resources>
-		<local:MainViewModel x:Key="MainViewModelDataSource" />
+		<vm:MainViewModel x:Key="MainViewModelDataSource" />
 	</UserControl.Resources>
 
-	<Grid x:Name="LayoutRoot" DataContext="{Binding Source={StaticResource MainViewModelDataSource}}" d:DataContext="{d:DesignData /SampleData/MainViewModelSampleData.xaml}">
+	<Grid x:Name="LayoutRoot" DataContext="{Binding Source={StaticResource MainViewModelDataSource}}">
 		<TextBlock Text="{Binding ViewModelProperty}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
 		<Button Content="Update Value" Height="41" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,125,0,0">
 			<i:Interaction.Triggers>

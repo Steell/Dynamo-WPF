@@ -10,7 +10,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 
-namespace Dynamo_WPF
+namespace Dynamo.UI.Wpf.Views
 {
 	/// <summary>
 	/// Interaction logic for WorkspaceView.xaml
