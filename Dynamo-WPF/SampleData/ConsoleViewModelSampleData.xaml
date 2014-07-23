@@ -1,0 +1,9 @@
+﻿<vm:SampleConsoleViewModel xmlns:vm="clr-namespace:Dynamo.UI.Wpf.ViewModels"
+                           xmlns:models="clr-namespace:Dynamo.UI.Models;assembly=DynamoModels">
+    <vm:SampleConsoleViewModel.SampleEntries>
+        <models:LogEntry Text="Welcome to Dynamo!"/>
+        <models:LogEntry Severity="Warning" Text="Be careful..."/>
+        <models:LogEntry Severity="Hint" Text="Nodes can be passed as functions."/>
+        <models:LogEntry Severity="Error" Text="You done messed up!"/>
+    </vm:SampleConsoleViewModel.SampleEntries>
+</vm:SampleConsoleViewModel>

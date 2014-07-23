@@ -96,12 +96,16 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="ViewModels\ConnectorViewModel.cs" />
+    <Compile Include="ViewModels\ConsoleViewModel.cs" />
     <Compile Include="ViewModels\DynamoViewModel.cs" />
     <Compile Include="ViewModels\NodeViewModel.cs" />
     <Compile Include="ViewModels\PortViewModel.cs" />
     <Compile Include="ViewModels\WorkspaceViewModel.cs" />
     <Compile Include="Views\ConnectorView.xaml.cs">
       <DependentUpon>ConnectorView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\ConsoleView.xaml.cs">
+      <DependentUpon>ConsoleView.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\DynamoView.xaml.cs">
       <DependentUpon>DynamoView.xaml</DependentUpon>
@@ -131,9 +135,16 @@
       <DependentUpon>MainView.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="SampleData\ConsoleViewModelSampleData.xaml">
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="Views\ConnectorView.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\ConsoleView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Views\DynamoView.xaml">
       <Generator>MSBuild:Compile</Generator>
