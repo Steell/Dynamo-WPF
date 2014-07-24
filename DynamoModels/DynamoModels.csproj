@@ -66,6 +66,7 @@
     <Compile Include="ConsoleModel.cs" />
     <Compile Include="LacingStrategy.cs" />
     <Compile Include="NodeModel.cs" />
+    <Compile Include="ObservableExtensions.cs" />
     <Compile Include="PortModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

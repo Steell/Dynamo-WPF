@@ -4,7 +4,6 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
-using System.Reactive.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -47,19 +46,14 @@ namespace Dynamo.UI.Wpf.ViewModels
     {
         public List<LogEntry> SampleEntries { get; set; }
 
-        public override IEnumerable<LogEntry> Entries { get { return SampleEntries; } }
+        public override IEnumerable<LogEntry> Entries
+        {
+            get { return SampleEntries; }
+        }
 
         public override ICommand Clear
         {
             get { return new ActionCommand(() => SampleEntries.Clear()); }
-        }
-    }
-
-    public static class ObservableExtensions
-    {
-        public static IObservable<bool> Not(this IObservable<bool> observable)
-        {
-            return observable.Select(x => !x);
         }
     }
 }

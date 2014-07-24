@@ -7,7 +7,7 @@ using ReactiveUI;
 
 namespace Dynamo.UI.Models
 {
-    public class NodeModel
+    public class Node
     {
         public IReactiveCollection<PortModel> InPorts;
         public IReactiveCollection<PortModel> OutPorts;
