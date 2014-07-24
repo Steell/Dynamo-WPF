@@ -8,35 +8,50 @@ using System.ComponentModel;
 
 namespace Dynamo.UI.Wpf.ViewModels
 {
-	public class DynamoViewModel : INotifyPropertyChanged
-	{
-		public DynamoViewModel()
-		{
-			Workspaces = new ObservableCollection<WorkspaceViewModel>();
-		}
+    public class DynamoViewModel : INotifyPropertyChanged
+    {
+        public DynamoViewModel()
+        {
+            Workspaces = new ObservableCollection<WorkspaceViewModel>();
+            Sidebars = new ObservableCollection<object>();
+        }
 
-		#region INotifyPropertyChanged
-		public event PropertyChangedEventHandler PropertyChanged;
+        #region INotifyPropertyChanged
+        public event PropertyChangedEventHandler PropertyChanged;
 
-		private void NotifyPropertyChanged(String info)
-		{
-			if (PropertyChanged != null)
-			{
-				PropertyChanged(this, new PropertyChangedEventArgs(info));
-			}
-		}
-		#endregion
-		
-	    private ObservableCollection<WorkspaceViewModel> workspaces;
-	    public ObservableCollection<WorkspaceViewModel> Workspaces
-	    {
-	        get { return workspaces; }
-	        set
-	        {
-	            workspaces = value;
-	            NotifyPropertyChanged("Workspaces");
-	        }
-	    }
+        private void NotifyPropertyChanged(String info)
+        {
+            if (PropertyChanged != null)
+            {
+                PropertyChanged(this, new PropertyChangedEventArgs(info));
+            }
+        }
+        #endregion
+        
+        private ObservableCollection<WorkspaceViewModel> workspaces;
+        public ObservableCollection<WorkspaceViewModel> Workspaces
+        {
+            get { return workspaces; }
+            set
+            {
+                workspaces = value;
+                NotifyPropertyChanged("Workspaces");
+            }
+        }
+
+        private ObservableCollection<object> sidebars;
+        public ObservableCollection<object> Sidebars
+        {
+            get
+            {
+                return sidebars; 
+            }
+            set
+            {
+                sidebars = value;
+                NotifyPropertyChanged("Sidebars");
+            }
+        }
 
         /* Properties */
 
@@ -64,7 +79,7 @@ namespace Dynamo.UI.Wpf.ViewModels
         // LogText
         // DynamicRunEnabled
         // CanRunDynamically
-        
+
         /* Commands */
 
         // SelectNeighbors
@@ -120,5 +135,5 @@ namespace Dynamo.UI.Wpf.ViewModels
         // ClearLog
         // RunExpression
         // CancelRun
-	}
+    }
 }

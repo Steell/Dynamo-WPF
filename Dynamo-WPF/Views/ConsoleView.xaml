@@ -13,22 +13,43 @@
                 <MenuItem Header="Clear" Command="{Binding Clear}" />
             </ContextMenu>
         </Grid.ContextMenu>
+
+        <ItemsControl ItemsSource="{Binding Items}">
+
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition SharedSizeGroup="ColumnOne" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Label Content="{Binding Header}"/>
+                        <TextBox Text="{Binding Content}" Grid.Column="1"/>
+                    </Grid>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
         <ItemsControl ItemsSource="{Binding Entries}">
             <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
-                    <VirtualizingStackPanel Orientation="Vertical" />
+                    <StackPanel Grid.IsSharedSizeScope="True" />
                 </ItemsPanelTemplate>
             </ItemsControl.ItemsPanel>
             <ItemsControl.ItemTemplate>
                 <DataTemplate DataType="{x:Type models:LogEntry}">
-                    <StackPanel Orientation="Horizontal">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition SharedSizeGroup="ColumnOne" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
                         <TextBlock Text="{Binding Severity}" FontWeight="Bold">
                             <TextBlock.Margin>
                                 <Thickness Right="5" />
                             </TextBlock.Margin>
                         </TextBlock>
-                        <TextBlock Text="{Binding Text}" />
-                    </StackPanel>
+                        <TextBlock Text="{Binding Text}" Grid.Column="1" TextWrapping="Wrap"/>
+                    </Grid>
                 </DataTemplate>
             </ItemsControl.ItemTemplate>
         </ItemsControl>
