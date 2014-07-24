@@ -48,6 +48,12 @@ namespace Dynamo.UI.Wpf.ViewModels
             var connectors = new ReactiveList<Connector>();
             var notes = new ReactiveList<Note>();
 
+            var nodeVMs = nodes.CreateDerivedCollection(x => new NodeViewModel(x));
+            var connectorVMs = connectors.CreateDerivedCollection(x => new ConnectorViewModel(x));
+            var noteVMs = notes.CreateDerivedCollection(x => new NoteViewModel(x));
+
+            var selection = new ReactiveList<object>();
+
             RegisterSubscriptionsForDisposal(
                 model.NewNodeStream.Buffer().Subscribe(nodes.AddRange),
                 model.DeletedNodeStream.Buffer().Subscribe(nodes.RemoveAll),
@@ -55,14 +61,11 @@ namespace Dynamo.UI.Wpf.ViewModels
                 model.DeletedConnectorStream.Buffer().Subscribe(connectors.RemoveAll),
                 model.NewNoteStream.Buffer().Subscribe(notes.AddRange),
                 model.DeletedNoteStream.Buffer().Subscribe(notes.RemoveAll));
+                //nodeVMs.ItemsAdded.SelectMany(
+                //    node => node.NodeSelectedChanged.Select(selected => new { node, selected }))
+                //    .Subscribe(selection.Add));
 
-            WorkspaceElements = new CompositeCollection
-            {
-                nodes.CreateDerivedCollection(x => new NodeViewModel(x)),
-                connectors.CreateDerivedCollection(x => new ConnectorViewModel(x)),
-                notes.CreateDerivedCollection(x => new NoteViewModel(x))
-            };
-
+            WorkspaceElements = new CompositeCollection { nodeVMs, connectorVMs, noteVMs };
             Name = model.Filename;
         }
 
@@ -70,9 +73,8 @@ namespace Dynamo.UI.Wpf.ViewModels
 
         public CompositeCollection WorkspaceElements { get; private set; }
 
-        // IsCurrentSpace -- Used to make the workspace hit test visible
-        // WorkspaceElements -- All things that can be placed and moved in the workspace
-        // Left/Top/ZIndex -- Canvas positioning
+        public IReactiveCollection<object> Selection { get; private set; }
+
         // CanFindNodesFromElements -- Flag determining whether or not we can find nodes by selected geometry
         // IsHomeSpace -- Is this the home workspace?
         // IsPanning
@@ -83,7 +85,7 @@ namespace Dynamo.UI.Wpf.ViewModels
 
         /* Commands */
 
-        // AlignSelected -- Aligns nodes using the given string parameter as a strategy
+        // AlignSelected -- Aligns nodes using the given parameter as a strategy
         // NodeFromSelection -- Node collapsing
         // FindNodesFromSelection -- Find nodes from selected geometry
         // DynamoViewModel.PublishCurrentWorkspaceCommand -- Publishes current custom node
@@ -97,5 +99,14 @@ namespace Dynamo.UI.Wpf.ViewModels
         // TODO: Make a state enum, use converter to System.Windows.Input.Cursor
         // CurrentCursor -- Cursor used for ZoomBorder
         // IsCursorForced -- ForceCursor used for ZoomBorder
+
+        // TODO: Make a lens class that allows for different views of the same Workspace
+        // Left/Top/ZIndex -- Canvas positioning
+
+        #region Old Commands and Properties
+
+        // IsCurrentSpace -- Used to make the workspace hit test visible
+
+        #endregion
     }
 }

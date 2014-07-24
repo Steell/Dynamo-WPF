@@ -22,19 +22,19 @@ namespace Dynamo.UI.Wpf.ViewModels
 
         }
 
-        [Obsolete("Use new NodeViewModel(NodeModel)")]
-        public NodeModel Model
+        [Obsolete("Use new NodeViewModel(Node)")]
+        public Node Model
         {
             set { Initialize(value); }
         }
         #endregion
 
-        public NodeViewModel(NodeModel model)
+        public NodeViewModel(Node model)
         {
             Initialize(model);
         }
 
-        private void Initialize(NodeModel model)
+        private void Initialize(Node model)
         {
             InPorts = model.InPorts.CreateDerivedCollection(x => new PortViewModel(x));
             OutPorts = model.OutPorts.CreateDerivedCollection(x => new PortViewModel(x));
@@ -89,6 +89,11 @@ namespace Dynamo.UI.Wpf.ViewModels
             set { this.RaiseAndSetIfChanged(ref isInteractionEnabled, value); }
         }
         private bool isInteractionEnabled;
+
+
+        public IObservable<bool> NodeSelectedChanged;
+
+
 
         // TODO: NodeViewModel Missing Items
         // IsCustomFunction -- Boolean flag for whether or not the node is a custom node instance
