@@ -101,6 +101,7 @@
     <Compile Include="ViewModels\ConsoleViewModel.cs" />
     <Compile Include="ViewModels\DynamoViewModel.cs" />
     <Compile Include="ViewModels\NodeViewModel.cs" />
+    <Compile Include="ViewModels\NoteViewModel.cs" />
     <Compile Include="ViewModels\PortViewModel.cs" />
     <Compile Include="ViewModels\WorkspaceViewModel.cs" />
     <Compile Include="Views\ConnectorView.xaml.cs">
@@ -184,6 +185,10 @@
     <ProjectReference Include="..\DynamoModels\DynamoModels.csproj">
       <Project>{5732B821-F933-4C2B-AF69-9C31B70D113D}</Project>
       <Name>DynamoModels</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\ObservableExtensions\ObservableExtensions.csproj">
+      <Project>{d98ceb91-fe01-4734-9c90-d699cfa86484}</Project>
+      <Name>ObservableExtensions</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath32)\Microsoft.CSharp.targets" />

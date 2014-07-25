@@ -55,13 +55,13 @@ namespace Dynamo.UI.Wpf.ViewModels
             var selection = new ReactiveList<object>();
 
             RegisterSubscriptionsForDisposal(
-                model.NewNodeStream.Buffer().Subscribe(nodes.AddRange),
-                model.DeletedNodeStream.Buffer().Subscribe(nodes.RemoveAll),
-                model.NewConnectorStream.Buffer().Subscribe(connectors.AddRange),
-                model.DeletedConnectorStream.Buffer().Subscribe(connectors.RemoveAll),
-                model.NewNoteStream.Buffer().Subscribe(notes.AddRange),
-                model.DeletedNoteStream.Buffer().Subscribe(notes.RemoveAll));
-                //nodeVMs.ItemsAdded.SelectMany(
+                model .NewNodeStream          .Buffer() .Subscribe( nodes.AddRange       ),
+                model .DeletedNodeStream      .Buffer() .Subscribe( nodes.RemoveAll      ),
+                model .NewConnectorStream     .Buffer() .Subscribe( connectors.AddRange  ),
+                model .DeletedConnectorStream .Buffer() .Subscribe( connectors.RemoveAll ),
+                model .NewNoteStream          .Buffer() .Subscribe( notes.AddRange       ),
+                model .DeletedNoteStream      .Buffer() .Subscribe( notes.RemoveAll      ));
+                //nodeVMs.ItemsAdded.SelectMany( 
                 //    node => node.NodeSelectedChanged.Select(selected => new { node, selected }))
                 //    .Subscribe(selection.Add));
 

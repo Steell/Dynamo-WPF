@@ -13,6 +13,5 @@
     </UserControl.Resources>
 
     <Grid Background="White" d:DataContext="{d:DesignData /SampleData/WorkspaceViewModelSampleData.xaml}">
-        
     </Grid>
 </UserControl>
