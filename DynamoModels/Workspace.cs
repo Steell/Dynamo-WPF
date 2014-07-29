@@ -2,7 +2,7 @@
 
 namespace Dynamo.UI.Models
 {
-    public class WorkspaceModel
+    public class Workspace
     {
         public IObservable<Node> NewNodeStream;
         public IObservable<Node> DeletedNodeStream; 

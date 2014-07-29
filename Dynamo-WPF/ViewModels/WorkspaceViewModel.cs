@@ -8,6 +8,7 @@ using System.Text;
 using System.Windows.Data;
 using System.ComponentModel;
 using Dynamo.UI.Models;
+using ObservableExtensions;
 using ReactiveUI;
 
 namespace Dynamo.UI.Wpf.ViewModels
@@ -42,7 +43,7 @@ namespace Dynamo.UI.Wpf.ViewModels
     {
         /* Properties */
 
-        public WorkspaceViewModel(WorkspaceModel model)
+        public WorkspaceViewModel(Workspace model)
         {
             var nodes = new ReactiveList<Node>();
             var connectors = new ReactiveList<Connector>();

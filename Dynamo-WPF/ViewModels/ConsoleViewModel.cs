@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using Dynamo.UI.Models;
 using Microsoft.Expression.Interactivity.Core;
+using ObservableExtensions;
 using ReactiveUI;
 
 namespace Dynamo.UI.Wpf.ViewModels
