@@ -39,9 +39,9 @@ namespace Sandbox
         }
          * */
 
-        public struct Connector<TNode>
+        public struct Connector<TNode, TMetaData>
         {
-            public Connection<TNode> Start, End;
+            public Connection<TNode, TMetaData> Start, End;
 
             public override string ToString()
             {
@@ -49,10 +49,10 @@ namespace Sandbox
             }
         }
 
-        public struct Connection<TNode>
+        public struct Connection<TNode, TMetaData>
         {
             public TNode Node;
-            public int PortIndex;
+            public TMetaData PortIndex;
 
             public override string ToString()
             {
@@ -60,18 +60,18 @@ namespace Sandbox
             }
         }
 
-        public class WorkspaceModel<TNode>
+        public class GraphModel<TNode, TMetaData>
         {
-            public IObservable<Connector<TNode>> ConnectorCreatedStream { get; private set; }
-            public IObservable<Connection<TNode>> BeginNewConnectionStream { get; private set; }
-            public IObservable<Connection<TNode>?> EndNewConnectionStream { get; private set; }
-            public IObservable<Connector<TNode>> ConnectorDeletedStream { get; private set; }
+            public IObservable<Connector<TNode, TMetaData>> ConnectorCreatedStream { get; private set; }
+            public IObservable<Connection<TNode, TMetaData>> BeginNewConnectionStream { get; private set; }
+            public IObservable<Connection<TNode, TMetaData>?> EndNewConnectionStream { get; private set; }
+            public IObservable<Connector<TNode, TMetaData>> ConnectorDeletedStream { get; private set; }
 
-            public WorkspaceModel(
-                IObservable<Connection<TNode>> beginNewConnectionStream, 
-                IObservable<Connection<TNode>?> endNewConnectionStream,
+            public GraphModel(
+                IObservable<Connection<TNode, TMetaData>> beginNewConnectionStream,
+                IObservable<Connection<TNode, TMetaData>?> endNewConnectionStream,
                 IObservable<TNode> nodeDeletedStream,
-                IObservable<Connector<TNode>> connectorDeletedStream)
+                IObservable<Connector<TNode, TMetaData>> connectorDeletedStream)
             {
                 BeginNewConnectionStream = beginNewConnectionStream;
                 EndNewConnectionStream = endNewConnectionStream;
@@ -87,7 +87,7 @@ namespace Sandbox
                         .Where(x => x.end.HasValue)
 
                         // Build connectors from the start and end
-                        .Select(c => new Connector<TNode> { Start = c.start, End = c.end.Value })
+                        .Select(c => new Connector<TNode, TMetaData> { Start = c.start, End = c.end.Value })
 
                         // Repeat from the beginning.
                         .Repeat();
@@ -105,6 +105,21 @@ namespace Sandbox
             }
         }
 
+        public class GraphModelWithDisconnect<TNode, TMetaData> : GraphModel<TNode, TMetaData>
+        {
+            public GraphModelWithDisconnect(
+                IObservable<Connector<TNode, TMetaData>> disconnectStream,
+                IObservable<Connection<TNode, TMetaData>> beginNewConnectionStream,
+                IObservable<Connection<TNode, TMetaData>?> endNewConnectionStream, 
+                IObservable<TNode> nodeDeletedStream)
+                : base(
+                    beginNewConnectionStream.Merge(disconnectStream.Select(x => x.Start)),
+                    endNewConnectionStream,
+                    nodeDeletedStream,
+                    disconnectStream)
+            { }
+        }
+
         [Test]
         public static void CanCreateConnector()
         {
@@ -113,20 +128,18 @@ namespace Sandbox
                     .Select(x => x.ToString())
                     .ToArray();
 
-            var startConnection = new Subject<Connection<string>>();
-            var endConnection = new Subject<Connection<string>?>();
-            var disconnect = new Subject<Connector<string>>();
+            var startConnection = new Subject<Connection<string, int>>();
+            var endConnection = new Subject<Connection<string, int>?>();
+            var disconnect = new Subject<Connector<string, int>>();
             var deleteNode = new Subject<string>();
 
             startConnection.Dump("StartConnection");
             endConnection.Dump("EndConnection");
             disconnect.Dump("Disconnect");
 
-            var workspace = new WorkspaceModel<string>(
-                startConnection.Merge(disconnect.Select(connector => connector.Start)), //disconnects trigger a new connection
-                endConnection,
-                deleteNode,
-                disconnect);
+            var workspace =
+                new GraphModelWithDisconnect<string, int>(
+                    disconnect, startConnection, endConnection, deleteNode);
 
             workspace.ConnectorCreatedStream.Dump("  ConnectorCreated");
             workspace.BeginNewConnectionStream.Dump("  ConnectionStarted");
@@ -134,12 +147,12 @@ namespace Sandbox
 
             workspace.ConnectorCreatedStream.Take(2).Subscribe(disconnect.OnNext);
             workspace.ConnectorDeletedStream
-                .Select(_ => new Connection<string> { Node = nodes[2] } as Connection<string>?)
+                .Select(_ => new Connection<string, int> { Node = nodes[2] } as Connection<string, int>?)
                 .Subscribe(endConnection.OnNext);
 
-            startConnection.OnNext(new Connection<string> {Node = nodes[0]});
-            startConnection.OnNext(new Connection<string> {Node = nodes[1]});
-            endConnection.OnNext(new Connection<string> {Node = nodes[1]});
+            startConnection.OnNext(new Connection<string, int> { Node = nodes[0] });
+            startConnection.OnNext(new Connection<string, int> { Node = nodes[1] });
+            endConnection.OnNext(new Connection<string, int> { Node = nodes[1] });
 
             Assert.Pass("Success");
         }
