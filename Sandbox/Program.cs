@@ -220,5 +220,36 @@ namespace Sandbox
             
             Assert.Pass("Success");
         }
+
+        [Test]
+        public static void DisposalFiresOnCompleted()
+        {
+            Observable
+                .Return(0)
+                .Feedback(Observable.Return, i => Observable.Return(i + 1))
+                .Take(10)
+                .Dump("Count");
+        }
+
+        [Test]
+        public static void ControlFlow()
+        {
+            var test = new Subject<bool>();
+            var ifTrue = new Subject<string>();
+            var ifFalse = new Subject<string>();
+
+            var branching = test.IfThenElse(
+                ifTrue.Do(x => Console.WriteLine("true-->{0}", x)), 
+                ifFalse.Do(x => Console.WriteLine("false-->{0}", x)));
+
+            branching.Dump("Out");
+            
+            test.OnNext(true);
+            ifTrue.OnNext("true");
+            ifFalse.OnNext("false");
+            test.OnNext(false);
+            ifTrue.OnNext("true2");
+            test.OnNext(true);
+        }
     }
 }
