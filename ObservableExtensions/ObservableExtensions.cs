@@ -1,8 +1,11 @@
 ﻿using System;
+using System.CodeDom;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
+using System.Reactive.Subjects;
 
 namespace ObservableExtensions
 {
@@ -49,7 +52,7 @@ namespace ObservableExtensions
         /// </summary>
         /// <typeparam name="T">Type of elements that the observable sequence produces.</typeparam>
         /// <param name="func">Function used to generate new elements.</param>
-        public static IObservable<T> Repeat<T>(Func<T> func)
+        public static IObservable<T> Generate<T>(Func<T> func)
         {
             return Observable.Repeat(func).Select(f => f());
         }
@@ -108,44 +111,68 @@ namespace ObservableExtensions
             return Observable.Create<TResult>(
                 obs =>
                 {
-                    var ret = new CompositeDisposable();
-                    Action<IDisposable> partComplete =
-                        d =>
-                        {
-                            ret.Remove(d);
-                            if (ret.Count == 0) obs.OnCompleted();
-                        };
-                    Action<IObservable<T>, Action<T>> ssub =
-                        (o, n) =>
-                        {
-                            var disp = new SingleAssignmentDisposable();
-                            ret.Add(disp);
-                            disp.Disposable = o.Subscribe(n, obs.OnError, () => partComplete(disp));
-                        };
-                    Action<IObservable<TResult>, Action<TResult>> rsub =
-                        (o, n) =>
-                        {
-                            var disp = new SingleAssignmentDisposable();
-                            ret.Add(disp);
-                            disp.Disposable = o.Subscribe(n, obs.OnError, () => partComplete(disp));
-                        };
+                    var disposable = new CompositeDisposable();
 
-                    Action<T> recurse = null;
-                    recurse = s => rsub(produce(s),
-                        r =>
+                    var seedPublished = seed.Publish();
+                    var feedbackSubject = new Subject<T>();
+                    var resultStream = feedbackSubject.SelectMany(produce);
+
+                    var feedbackSubscription =
+                        resultStream
+                            .SelectMany(feed)
+                            .Subscribe(feedbackSubject.OnNext);
+
+                    var resultSubscription = resultStream.Subscribe(
+                        obs.OnNext,
+                        obs.OnError,
+                        () =>
                         {
-                            obs.OnNext(r);
-                            ssub(feed(r), recurse);
+                            disposable.Dispose();
+                            obs.OnCompleted();
                         });
 
-                    ssub(seed, recurse);
-                    return ret;
+                    var seedS = seedPublished.Subscribe(feedbackSubject);
+                    var seedSubscription = seedPublished.Connect();
+
+                    disposable.Add(feedbackSubscription);
+                    disposable.Add(feedbackSubject);
+                    disposable.Add(resultSubscription);
+                    disposable.Add(seedSubscription);
+                    disposable.Add(seedS);
+
+                    return disposable;
                 });
+        }
+
+        public static IObservable<T> Feedback<T>(this IObservable<T> seed, Func<T, IObservable<T>> selector)
+        {
+            return Feedback(seed, selector, Observable.Return);
+        }
+
+        public static IObservable<T> IfThenElse<T>(
+            this IObservable<bool> testObservable, 
+            IObservable<T> trueObsservable,
+            IObservable<T> falseObservable)
+        {
+            return Observable.Create<T>(obs =>
+            {
+                var trueBuffered = trueObsservable.Replay(1);
+                var falseBuffered = falseObservable.Replay(1);
+
+                var branching = testObservable.Select(testResult => testResult ? trueBuffered : falseBuffered).Switch();
+
+                return new CompositeDisposable
+                {
+                    trueBuffered.Connect(),
+                    falseBuffered.Connect(),
+                    branching.Subscribe(obs)
+                };
+            });
         }
 
         /// <summary>
         ///     Sequence of lines input from the Console.
         /// </summary>
-        public static IObservable<string> ConsoleLineReader = Repeat(Console.ReadLine);
+        public static IObservable<string> ConsoleLineReader = Generate(Console.ReadLine);
     }
 }
