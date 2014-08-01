@@ -60,52 +60,107 @@ namespace Sandbox
             }
         }
 
+        /// <summary>
+        ///     Interactive model of a Graph that supports asynchronous creation of connectors.
+        /// </summary>
+        /// <typeparam name="TNode">Type of all nodes.</typeparam>
+        /// <typeparam name="TMetaData">Type of data attached to all connections.</typeparam>
         public class GraphModel<TNode, TMetaData>
         {
+            /// <summary>
+            ///     Observable sequence of new connectors
+            /// </summary>
             public IObservable<Connector<TNode, TMetaData>> ConnectorCreatedStream { get; private set; }
+
+            /// <summary>
+            ///     Observable sequence of the start of a new connection action
+            /// </summary>
             public IObservable<Connection<TNode, TMetaData>> BeginNewConnectionStream { get; private set; }
+
+            /// <summary>
+            ///     Observable sequence of the end of a new connection action
+            /// </summary>
             public IObservable<Connection<TNode, TMetaData>?> EndNewConnectionStream { get; private set; }
-            public IObservable<Connector<TNode, TMetaData>> ConnectorDeletedStream { get; private set; }
 
             public GraphModel(
                 IObservable<Connection<TNode, TMetaData>> beginNewConnectionStream,
-                IObservable<Connection<TNode, TMetaData>?> endNewConnectionStream,
-                IObservable<TNode> nodeDeletedStream,
-                IObservable<Connector<TNode, TMetaData>> connectorDeletedStream)
+                IObservable<Connection<TNode, TMetaData>?> endNewConnectionStream)
             {
                 BeginNewConnectionStream = beginNewConnectionStream;
                 EndNewConnectionStream = endNewConnectionStream;
 
-                ConnectorCreatedStream = 
-                    // Listen for one connection start event
-                    BeginNewConnectionStream.FirstAsync()
+                ConnectorCreatedStream =
+                    // Listen for a connection start event
+                    BeginNewConnectionStream
 
                         // Then, listen for something to end the connection in progress.
-                        .SelectMany(start => EndNewConnectionStream.Select(end => new { start, end }))
+                        .Select(start => EndNewConnectionStream.Select(end => new { start, end }))
+
+                        // When a new connection start comes in, stop tracking the old one
+                        .Switch()
 
                         // Ignore cancelled connections
-                        .Where(x => x.end.HasValue)
+                        .Where(c => c.end.HasValue)
 
                         // Build connectors from the start and end
-                        .Select(c => new Connector<TNode, TMetaData> { Start = c.start, End = c.end.Value })
-
-                        // Repeat from the beginning.
-                        .Repeat();
-
-                var hangingConnectors =
-                    ConnectorCreatedStream.SelectMany(
-                        connector =>
-                            nodeDeletedStream
-                                .Where(
-                                    node =>
-                                        connector.Start.Node.Equals(node) || connector.End.Node.Equals(node))
-                                .Select(_ => connector));
-
-                ConnectorDeletedStream = connectorDeletedStream.Merge(hangingConnectors); //disconnects trigger deletion
+                        .Select(c => new Connector<TNode, TMetaData> { Start = c.start, End = c.end.Value });
             }
         }
 
-        public class GraphModelWithDisconnect<TNode, TMetaData> : GraphModel<TNode, TMetaData>
+        /// <summary>
+        ///     Interactive model of a Graph that supports asynchronous creation and
+        ///     deletion of connectors.
+        /// </summary>
+        /// <typeparam name="TNode">Type of all nodes.</typeparam>
+        /// <typeparam name="TMetaData">Type of data attached to all connections.</typeparam>
+        public class GraphModelWithDeletion<TNode, TMetaData> : GraphModel<TNode, TMetaData>
+        {
+            /// <summary>
+            ///     Observable sequence of deleted connectors
+            /// </summary>
+            public IObservable<Connector<TNode, TMetaData>> ConnectorDeletedStream { get; private set; }
+
+            public GraphModelWithDeletion(
+                IObservable<Connection<TNode, TMetaData>> beginNewConnectionStream,
+                IObservable<Connection<TNode, TMetaData>?> endNewConnectionStream,
+                IObservable<TNode> nodeDeletedStream,
+                IObservable<Connector<TNode, TMetaData>> connectorDeletedStream)
+                : base(beginNewConnectionStream, endNewConnectionStream)
+            {
+                // Observable sequence of "hanging" connectors
+                var hangingConnectors =
+                    // For each new connector...
+                    ConnectorCreatedStream.SelectMany(
+                        connector =>
+                            // ...listen for a node deletion...
+                            nodeDeletedStream
+
+                                // ...where the node deleted was attached to the connector.
+                                .Where(
+                                    node =>
+                                        connector.Start.Node.Equals(node) || connector.End.Node.Equals(node))
+                            
+                                // Only take the first occurence (no need to delete the same connector twice)
+                                .FirstAsync()
+                                
+                                // Produce the hanging connector.
+                                .Select(_ => connector)
+                                
+                                // Stop listening once the connector has been deleted.
+                                .TakeUntil(connectorDeletedStream.Where(c => connector.Equals(c))));
+
+                // Deleted connectors are both external deletions and hanging connectors caused by node deletions.
+                ConnectorDeletedStream = connectorDeletedStream.Merge(hangingConnectors);
+            }
+        }
+
+        /// <summary>
+        ///     Interactive model of a Graph that supports asynchronous creation, disconnection,
+        ///     and reconnection of connectors.
+        /// </summary>
+        /// <typeparam name="TNode">Type of all nodes.</typeparam>
+        /// <typeparam name="TMetaData">Type of data attached to all connections.</typeparam>
+        public class GraphModelWithDisconnect<TNode, TMetaData> : GraphModelWithDeletion<TNode, TMetaData>
         {
             public GraphModelWithDisconnect(
                 IObservable<Connector<TNode, TMetaData>> disconnectStream,
@@ -136,24 +191,33 @@ namespace Sandbox
             startConnection.Dump("StartConnection");
             endConnection.Dump("EndConnection");
             disconnect.Dump("Disconnect");
+            deleteNode.Dump("DeleteNode");
 
             var workspace =
                 new GraphModelWithDisconnect<string, int>(
                     disconnect, startConnection, endConnection, deleteNode);
 
             workspace.ConnectorCreatedStream.Dump("  ConnectorCreated");
-            workspace.BeginNewConnectionStream.Dump("  ConnectionStarted");
             workspace.ConnectorDeletedStream.Dump("  ConnectorDeleted");
+            workspace.BeginNewConnectionStream.Dump("  ConnectionStarted");
 
-            workspace.ConnectorCreatedStream.Take(2).Subscribe(disconnect.OnNext);
-            workspace.ConnectorDeletedStream
-                .Select(_ => new Connection<string, int> { Node = nodes[2] } as Connection<string, int>?)
-                .Subscribe(endConnection.OnNext);
-
-            startConnection.OnNext(new Connection<string, int> { Node = nodes[0] });
             startConnection.OnNext(new Connection<string, int> { Node = nodes[1] });
+            startConnection.OnNext(new Connection<string, int> { Node = nodes[0] });
+            endConnection.OnNext(new Connection<string, int> { Node = nodes[1] });
+            
+            disconnect.OnNext(
+                new Connector<string, int>
+                {
+                    Start = new Connection<string, int> { Node = nodes[0] },
+                    End = new Connection<string, int> { Node = nodes[1] }
+                });
+
+            endConnection.OnNext(new Connection<string, int> { Node = nodes[2] });
+            startConnection.OnNext(new Connection<string, int> { Node = nodes[0] });
             endConnection.OnNext(new Connection<string, int> { Node = nodes[1] });
 
+            deleteNode.OnNext(nodes[0]);
+            
             Assert.Pass("Success");
         }
     }
