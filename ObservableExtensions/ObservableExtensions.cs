@@ -94,7 +94,7 @@ namespace ObservableExtensions
                 case NotificationKind.OnNext:
                     return string.Format("{0}-->{1}", name, notification.Value);
                 case NotificationKind.OnError:
-                    return string.Format("{0} failed -->{1}", name, notification.Exception);
+                    return string.Format("{0} failed-->{1}", name, notification.Exception);
                 default:
                     return string.Format("{0} completed", name);
             }
