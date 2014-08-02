@@ -1,18 +1,8 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Diagnostics;
 using System.Globalization;
-using System.IO;
 using System.Linq;
-using System.Reactive;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
-using System.Reflection;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using NUnit.Framework;
 using ObservableExtensions;
 
@@ -45,7 +35,7 @@ namespace Sandbox
 
             public override string ToString()
             {
-                return string.Format("{0}=====>{1}", Start, End);
+                return string.Format("{0}=====>{1}", Start.Node, End.Node);
             }
         }
 
@@ -53,11 +43,17 @@ namespace Sandbox
         {
             public TNode Node;
             public TMetaData PortIndex;
+            public ConnectionType Type;
 
             public override string ToString()
             {
-                return Node.ToString(); //string.Format("(Connection: Node={0})", Node);//, PortIndex);
+                return string.Format("({0} {1})", Node, Type);//, PortIndex);
             }
+        }
+
+        public enum ConnectionType
+        {
+            Input, Output
         }
 
         /// <summary>
@@ -70,17 +66,29 @@ namespace Sandbox
             /// <summary>
             ///     Observable sequence of new connectors
             /// </summary>
-            public IObservable<Connector<TNode, TMetaData>> ConnectorCreatedStream { get; private set; }
+            public IObservable<Connector<TNode, TMetaData>> ConnectorCreatedStream
+            {
+                get;
+                private set;
+            }
 
             /// <summary>
             ///     Observable sequence of the start of a new connection action
             /// </summary>
-            public IObservable<Connection<TNode, TMetaData>> BeginNewConnectionStream { get; private set; }
+            public IObservable<Connection<TNode, TMetaData>> BeginNewConnectionStream
+            {
+                get;
+                private set;
+            }
 
             /// <summary>
             ///     Observable sequence of the end of a new connection action
             /// </summary>
-            public IObservable<Connection<TNode, TMetaData>?> EndNewConnectionStream { get; private set; }
+            public IObservable<Connection<TNode, TMetaData>?> EndNewConnectionStream 
+            { 
+                get; 
+                private set; 
+            }
 
             public GraphModel(
                 IObservable<Connection<TNode, TMetaData>> beginNewConnectionStream,
@@ -90,26 +98,54 @@ namespace Sandbox
                 EndNewConnectionStream = endNewConnectionStream;
 
                 ConnectorCreatedStream =
-                    // Listen for a connection start event
-                    BeginNewConnectionStream
+                    // Listen for a connection start event, then a connection end event
+                    BeginNewConnectionStream.FollowedBy(
+                        EndNewConnectionStream, NewConnectorData.Create)
+                        .Switch()                      // Only track newest connection
+                        .Where(c => c.IsValid())       // Ignore cancelled connections
+                        .Select(c => c.ToConnector()); // Build connector from data
+            }
 
-                        // Then, listen for something to end the connection in progress.
-                        .Select(start => EndNewConnectionStream.Select(end => new { start, end }))
+            private struct NewConnectorData
+            {
+                private Connection<TNode, TMetaData> start;
+                private Connection<TNode, TMetaData>? end;
 
-                        // When a new connection start comes in, stop tracking the old one
-                        .Switch()
+                public static NewConnectorData Create(
+                    Connection<TNode, TMetaData> start,
+                    Connection<TNode, TMetaData>? end)
+                {
+                    return new NewConnectorData(start, end);
+                }
 
-                        // Ignore cancelled connections
-                        .Where(c => c.end.HasValue)
+                private NewConnectorData(
+                    Connection<TNode, TMetaData> start, 
+                    Connection<TNode, TMetaData>? end)
+                    : this()
+                {
+                    this.start = start;
+                    this.end = end;
+                }
 
-                        // Build connectors from the start and end
-                        .Select(c => new Connector<TNode, TMetaData> { Start = c.start, End = c.end.Value });
+                public Connector<TNode, TMetaData> ToConnector()
+                {
+                    return start.Type == ConnectionType.Output
+// ReSharper disable PossibleInvalidOperationException
+                        ? new Connector<TNode, TMetaData> { Start = start, End = end.Value }
+                        : new Connector<TNode, TMetaData> { Start = end.Value, End = start };
+// ReSharper restore PossibleInvalidOperationException
+                }
+
+                public bool IsValid()
+                {
+                    return end.HasValue && start.Type != end.Value.Type;
+                }
             }
         }
 
         /// <summary>
-        ///     Interactive model of a Graph that supports asynchronous creation and
-        ///     deletion of connectors.
+        ///     Interactive model of a Graph that supports asynchronous creation and deletion of 
+        ///     connectors.
         /// </summary>
         /// <typeparam name="TNode">Type of all nodes.</typeparam>
         /// <typeparam name="TMetaData">Type of data attached to all connections.</typeparam>
@@ -118,7 +154,11 @@ namespace Sandbox
             /// <summary>
             ///     Observable sequence of deleted connectors
             /// </summary>
-            public IObservable<Connector<TNode, TMetaData>> ConnectorDeletedStream { get; private set; }
+            public IObservable<Connector<TNode, TMetaData>> ConnectorDeletedStream
+            {
+                get; 
+                private set;
+            }
 
             public GraphModelWithDeletion(
                 IObservable<Connection<TNode, TMetaData>> beginNewConnectionStream,
@@ -132,25 +172,30 @@ namespace Sandbox
                     // For each new connector...
                     ConnectorCreatedStream.SelectMany(
                         connector =>
-                            // ...listen for a node deletion...
-                            nodeDeletedStream
-
+                            nodeDeletedStream // ...listen for a node deletion...
+                                
                                 // ...where the node deleted was attached to the connector.
                                 .Where(
-                                    node =>
-                                        connector.Start.Node.Equals(node) || connector.End.Node.Equals(node))
-                            
-                                // Only take the first occurence (no need to delete the same connector twice)
-                                .FirstAsync()
-                                
-                                // Produce the hanging connector.
-                                .Select(_ => connector)
+                                    node => connector.Start.Node.Equals(node)
+                                            || connector.End.Node.Equals(node))
+
+                                .FirstAsync()           // Only listen for one occurence
+                                .Select(_ => connector) // Produce the hanging connector.
                                 
                                 // Stop listening once the connector has been deleted.
-                                .TakeUntil(connectorDeletedStream.Where(c => connector.Equals(c))));
+                                .TakeUntil(
+                                    connectorDeletedStream.Where(c => connector.Equals(c))));
 
-                // Deleted connectors are both external deletions and hanging connectors caused by node deletions.
-                ConnectorDeletedStream = connectorDeletedStream.Merge(hangingConnectors);
+                var validDeletions =
+                    // Make sure we only broadcast deletions of connectors that actually exist
+                    ConnectorCreatedStream.SelectMany(
+                        connector => 
+                            connectorDeletedStream.Where(
+                                other => connector.Equals(other)));
+
+                // Deleted connectors are both external deletions and hanging connectors caused by
+                // node deletions.
+                ConnectorDeletedStream = validDeletions.Merge(hangingConnectors);
             }
         }
 
@@ -160,7 +205,8 @@ namespace Sandbox
         /// </summary>
         /// <typeparam name="TNode">Type of all nodes.</typeparam>
         /// <typeparam name="TMetaData">Type of data attached to all connections.</typeparam>
-        public class GraphModelWithDisconnect<TNode, TMetaData> : GraphModelWithDeletion<TNode, TMetaData>
+        public class GraphModelWithDisconnect<TNode, TMetaData> 
+            : GraphModelWithDeletion<TNode, TMetaData>
         {
             public GraphModelWithDisconnect(
                 IObservable<Connector<TNode, TMetaData>> disconnectStream,
@@ -168,9 +214,11 @@ namespace Sandbox
                 IObservable<Connection<TNode, TMetaData>?> endNewConnectionStream, 
                 IObservable<TNode> nodeDeletedStream)
                 : base(
+                    //New connections are also triggered from disconnects
                     beginNewConnectionStream.Merge(disconnectStream.Select(x => x.Start)),
                     endNewConnectionStream,
                     nodeDeletedStream,
+                    //Disconnects trigger deletions
                     disconnectStream)
             { }
         }
@@ -180,7 +228,7 @@ namespace Sandbox
         {
             var nodes =
                 new[] {0, 1, 2}
-                    .Select(x => x.ToString())
+                    .Select(x => x.ToString(CultureInfo.InvariantCulture))
                     .ToArray();
 
             var startConnection = new Subject<Connection<string, int>>();
@@ -201,20 +249,41 @@ namespace Sandbox
             workspace.ConnectorDeletedStream.Dump("  ConnectorDeleted");
             workspace.BeginNewConnectionStream.Dump("  ConnectionStarted");
 
-            startConnection.OnNext(new Connection<string, int> { Node = nodes[1] });
-            startConnection.OnNext(new Connection<string, int> { Node = nodes[0] });
-            endConnection.OnNext(new Connection<string, int> { Node = nodes[1] });
+            startConnection.OnNext(
+                new Connection<string, int> { Node = nodes[1], Type = ConnectionType.Output });
+            startConnection.OnNext(
+                new Connection<string, int> { Node = nodes[0], Type = ConnectionType.Output });
+            endConnection.OnNext(null);
+            startConnection.OnNext(
+                new Connection<string, int> { Node = nodes[1], Type = ConnectionType.Input });
+            endConnection.OnNext(
+                new Connection<string, int> { Node = nodes[0], Type = ConnectionType.Output });
             
             disconnect.OnNext(
                 new Connector<string, int>
                 {
-                    Start = new Connection<string, int> { Node = nodes[0] },
-                    End = new Connection<string, int> { Node = nodes[1] }
+                    Start = new Connection<string, int>
+                    {
+                        Node = nodes[0], Type = ConnectionType.Output
+                    },
+                    End = new Connection<string, int>
+                    {
+                        Node = nodes[1], Type = ConnectionType.Input
+                    }
                 });
 
-            endConnection.OnNext(new Connection<string, int> { Node = nodes[2] });
-            startConnection.OnNext(new Connection<string, int> { Node = nodes[0] });
-            endConnection.OnNext(new Connection<string, int> { Node = nodes[1] });
+            endConnection.OnNext(new Connection<string, int>
+            {
+                Node = nodes[2], Type = ConnectionType.Input
+            });
+            startConnection.OnNext(new Connection<string, int>
+            {
+                Node = nodes[0], Type = ConnectionType.Output
+            });
+            endConnection.OnNext(new Connection<string, int>
+            {
+                Node = nodes[1], Type = ConnectionType.Input
+            });
 
             deleteNode.OnNext(nodes[0]);
             
