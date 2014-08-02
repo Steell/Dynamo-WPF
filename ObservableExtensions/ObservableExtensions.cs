@@ -170,6 +170,14 @@ namespace ObservableExtensions
             });
         }
 
+        public static IObservable<IObservable<T>> FollowedBy<T, TSource1, TSource2>(
+            this IObservable<TSource1> first,
+            IObservable<TSource2> second,
+            Func<TSource1, TSource2, T> selector)
+        {
+            return first.Select(f => second.Select(s => selector(f, s)));
+        }
+
         /// <summary>
         ///     Sequence of lines input from the Console.
         /// </summary>
