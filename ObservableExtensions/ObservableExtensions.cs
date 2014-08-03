@@ -1,11 +1,8 @@
 ﻿using System;
-using System.CodeDom;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
-using System.Reactive.Subjects;
 
 namespace ObservableExtensions
 {
@@ -32,19 +29,21 @@ namespace ObservableExtensions
         }
 
         /// <summary>
-        /// 
+        ///     Samples the source observable sequence using a sampler sequence; whenever the
+        ///     sampler produces a value, it is combined with the latest value from the source.
         /// </summary>
-        /// <typeparam name="TSample"></typeparam>
-        /// <typeparam name="TSampler"></typeparam>
-        /// <typeparam name="TResult"></typeparam>
-        /// <param name="source"></param>
-        /// <param name="sampler"></param>
-        /// <param name="selector"></param>
-        /// <returns></returns>
-        public static IObservable<TResult> Sample<TSample, TSampler, TResult>(this IObservable<TSample> source,
-            IObservable<TSampler> sampler, Func<TSample, TSampler, TResult> selector)
+        /// <typeparam name="TSample"/>
+        /// <typeparam name="TSampler"/>
+        /// <typeparam name="TResult"/>
+        /// <param name="source">Source observable sequence.</param>
+        /// <param name="sampler">Sampler observable sequence.</param>
+        /// <param name="selector">Combines values from the source and the sampler.</param>
+        public static IObservable<TResult> Sample<TSample, TSampler, TResult>(
+            this IObservable<TSample> source,
+            IObservable<TSampler> sampler,
+            Func<TSample, TSampler, TResult> selector)
         {
-            return source.Sample(sampler).Zip(sampler, selector);
+            return source.Select(src => sampler.Select(sample => selector(src, sample))).Switch();
         }
 
         /// <summary>
@@ -82,15 +81,17 @@ namespace ObservableExtensions
         /// <summary>
         ///     Creates a serialized stream of updates from a given observable sequence.
         /// </summary>
-        /// <typeparam name="T">Type of elements of the observable sequence.</typeparam>
+        /// <typeparam name="T"/>
         /// <param name="source">Observable sequence to serialize.</param>
         /// <param name="name">Label used in the output strings.</param>
-        public static IObservable<string> SerializeStream<T>(this IObservable<T> source, string name)
+        public static IObservable<string> SerializeStream<T>(
+            this IObservable<T> source, string name)
         {
             return source.Materialize().Select(n => n.NotificationToString(name));
         }
 
-        private static string NotificationToString<T>(this Notification<T> notification, string name)
+        private static string NotificationToString<T>(
+            this Notification<T> notification, string name)
         {
             switch (notification.Kind)
             {
@@ -102,64 +103,34 @@ namespace ObservableExtensions
                     return string.Format("{0} completed", name);
             }
         }
-
-        public static IObservable<TResult> Feedback<T, TResult>(
-            this IObservable<T> seed,
-            Func<T, IObservable<TResult>> produce,
-            Func<TResult, IObservable<T>> feed)
-        {
-            return Observable.Create<TResult>(
-                obs =>
-                {
-                    var disposable = new CompositeDisposable();
-
-                    var seedPublished = seed.Publish();
-                    var feedbackSubject = new Subject<T>();
-                    var resultStream = feedbackSubject.SelectMany(produce);
-
-                    var feedbackSubscription =
-                        resultStream
-                            .SelectMany(feed)
-                            .Subscribe(feedbackSubject.OnNext);
-
-                    var resultSubscription = resultStream.Subscribe(
-                        obs.OnNext,
-                        obs.OnError,
-                        () =>
-                        {
-                            disposable.Dispose();
-                            obs.OnCompleted();
-                        });
-
-                    var seedS = seedPublished.Subscribe(feedbackSubject);
-                    var seedSubscription = seedPublished.Connect();
-
-                    disposable.Add(feedbackSubscription);
-                    disposable.Add(feedbackSubject);
-                    disposable.Add(resultSubscription);
-                    disposable.Add(seedSubscription);
-                    disposable.Add(seedS);
-
-                    return disposable;
-                });
-        }
-
-        public static IObservable<T> Feedback<T>(this IObservable<T> seed, Func<T, IObservable<T>> selector)
-        {
-            return Feedback(seed, selector, Observable.Return);
-        }
-
+        
+        /// <summary>
+        ///     Subscribes to either a "true" or "false" stream based on booleans produced by the
+        ///     source sequence.
+        ///  </summary>
+        /// <typeparam name="T"/>
+        /// <param name="source">
+        ///     Observable sequence of bools. Whenever a value is produced, change subscription to
+        ///     the corresponding branch.
+        /// </param>
+        /// <param name="trueObservable">Observable sequence representing the true branch.</param>
+        /// <param name="falseObservable">
+        ///     Observable sequence representing the false branch.
+        /// </param>
         public static IObservable<T> IfThenElse<T>(
-            this IObservable<bool> testObservable, 
-            IObservable<T> trueObsservable,
+            this IObservable<bool> source, 
+            IObservable<T> trueObservable,
             IObservable<T> falseObservable)
         {
             return Observable.Create<T>(obs =>
             {
-                var trueBuffered = trueObsservable.Replay(1);
+                var trueBuffered = trueObservable.Replay(1);
                 var falseBuffered = falseObservable.Replay(1);
 
-                var branching = testObservable.Select(testResult => testResult ? trueBuffered : falseBuffered).Switch();
+                var branching = 
+                    source
+                        .Select(testResult => testResult ? trueBuffered : falseBuffered)
+                        .Switch();
 
                 return new CompositeDisposable
                 {
@@ -170,6 +141,19 @@ namespace ObservableExtensions
             });
         }
 
+        /// <summary>
+        ///     Waits for a value from the first observable sequence, followed by a value from the
+        ///     second observable sequence, then combines them with a given selector function to
+        ///     produce new values.
+        /// </summary>
+        /// <typeparam name="T"/>
+        /// <typeparam name="TSource1"/>
+        /// <typeparam name="TSource2"/>
+        /// <param name="first">Observable sequence to listen to first.</param>
+        /// <param name="second">Observable sequence to listen to second.</param>
+        /// <param name="selector">
+        ///     Function used to combine elements from the two sequences.
+        /// </param>
         public static IObservable<IObservable<T>> FollowedBy<T, TSource1, TSource2>(
             this IObservable<TSource1> first,
             IObservable<TSource2> second,
