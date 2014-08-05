@@ -72,6 +72,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\DynamoModels\DynamoModels.csproj">
+      <Project>{5732B821-F933-4C2B-AF69-9C31B70D113D}</Project>
+      <Name>DynamoModels</Name>
+    </ProjectReference>
     <ProjectReference Include="..\ObservableExtensions\ObservableExtensions.csproj">
       <Project>{D98CEB91-FE01-4734-9C90-D699CFA86484}</Project>
       <Name>ObservableExtensions</Name>

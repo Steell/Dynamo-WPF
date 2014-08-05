@@ -8,7 +8,7 @@ using System.ComponentModel;
 
 namespace Dynamo.UI.Wpf.ViewModels
 {
-    public class DynamoViewModel : INotifyPropertyChanged
+    public class DynamoViewModel : ViewModelBase
     {
         public DynamoViewModel()
         {

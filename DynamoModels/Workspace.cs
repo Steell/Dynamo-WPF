@@ -174,8 +174,18 @@ namespace Dynamo.UI.Models
         { }
     }
 
-    public class Workspace
+    public class Workspace : GraphModelWithDisconnect<Node, int>
     {
-        //TODO
+        public Workspace(
+            IObservable<Connector<Node, int>> disconnectStream,
+            IObservable<Connection<Node, int>> beginNewConnectionStream,
+            IObservable<Connection<Node, int>?> endNewConnectionStream, 
+            IObservable<Node> nodeDeletedStream)
+            : base(
+                disconnectStream,
+                beginNewConnectionStream,
+                endNewConnectionStream,
+                nodeDeletedStream)
+        { }
     }
 }

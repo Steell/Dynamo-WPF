@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
@@ -8,32 +7,12 @@ using System.Text;
 using System.Windows.Data;
 using System.ComponentModel;
 using Dynamo.UI.Models;
+using Dynamo.UI.Wpf.Views;
 using ObservableExtensions;
 using ReactiveUI;
 
 namespace Dynamo.UI.Wpf.ViewModels
 {
-    public abstract class ViewModelBase : ReactiveObject, IDisposable
-    {
-        private readonly List<IDisposable> subscriptions = new List<IDisposable>(); 
-        
-        public void Dispose()
-        {
-            foreach (var sub in subscriptions)
-                sub.Dispose();
-        }
-
-        public void RegisterSubscriptionForDisposal(IDisposable subscription)
-        {
-            subscriptions.Add(subscription);
-        }
-
-        public void RegisterSubscriptionsForDisposal(params IDisposable[] subs)
-        {
-            subscriptions.AddRange(subs);
-        }
-    }
-
     public abstract class AWorkspaceViewModel : ViewModelBase
     {
         
@@ -46,7 +25,7 @@ namespace Dynamo.UI.Wpf.ViewModels
         public WorkspaceViewModel(Workspace model)
         {
             var nodes = new ReactiveList<Node>();
-            var connectors = new ReactiveList<Connector>();
+            var connectors = new ReactiveList<Connector<Node, int>>();
             var notes = new ReactiveList<Note>();
 
             var nodeVMs = nodes.CreateDerivedCollection(x => new NodeViewModel(x));
@@ -54,21 +33,33 @@ namespace Dynamo.UI.Wpf.ViewModels
             var noteVMs = notes.CreateDerivedCollection(x => new NoteViewModel(x));
 
             var selection = new ReactiveList<object>();
+            Selection = selection;
+
+            var newNodeCommand = ReactiveCommand.Create();
+            NewNodeCommand = newNodeCommand;
+            var newNodeStream = newNodeCommand.Cast<NodeViewModel>().Select(x => x.Model);
+
+            var deleteNodeCommand = ReactiveCommand.Create();
+            DeleteNodeCommand = deleteNodeCommand;
+            var deleteNodeStream = deleteNodeCommand.Cast<NodeViewModel>().Select(x => x.Model);
 
             RegisterSubscriptionsForDisposal(
-                model .NewNodeStream          .Buffer() .Subscribe( nodes.AddRange       ),
-                model .DeletedNodeStream      .Buffer() .Subscribe( nodes.RemoveAll      ),
-                model .NewConnectorStream     .Buffer() .Subscribe( connectors.AddRange  ),
-                model .DeletedConnectorStream .Buffer() .Subscribe( connectors.RemoveAll ),
-                model .NewNoteStream          .Buffer() .Subscribe( notes.AddRange       ),
-                model .DeletedNoteStream      .Buffer() .Subscribe( notes.RemoveAll      ));
+                newNodeStream                 .Buffer() .Subscribe( nodes.AddRange       ),
+                deleteNodeStream              .Buffer() .Subscribe( nodes.RemoveAll      ),
+                model .ConnectorCreatedStream .Buffer() .Subscribe( connectors.AddRange  ),
+                model .ConnectorDeletedStream .Buffer() .Subscribe( connectors.RemoveAll ));
+                //model .NewNoteStream          .Buffer() .Subscribe( notes.AddRange       ),
+                //model .DeletedNoteStream      .Buffer() .Subscribe( notes.RemoveAll      ));
                 //nodeVMs.ItemsAdded.SelectMany( 
                 //    node => node.NodeSelectedChanged.Select(selected => new { node, selected }))
                 //    .Subscribe(selection.Add));
 
             WorkspaceElements = new CompositeCollection { nodeVMs, connectorVMs, noteVMs };
-            Name = model.Filename;
+            Name = "NODE";  //TODO model.Filename;
         }
+
+        public IReactiveCommand NewNodeCommand { get; private set; }
+        public IReactiveCommand DeleteNodeCommand { get; private set; }
 
         public string Name { get; private set; }
 

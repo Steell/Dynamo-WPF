@@ -9,7 +9,7 @@ namespace Dynamo.UI.Wpf.ViewModels
 {
 	public class ConnectorViewModel : ViewModelBase
 	{
-		public ConnectorViewModel(Connector model)
+		public ConnectorViewModel(Connector<Node, int> model)
 		{
 			
 		}

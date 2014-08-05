@@ -103,6 +103,7 @@
     <Compile Include="ViewModels\NodeViewModel.cs" />
     <Compile Include="ViewModels\NoteViewModel.cs" />
     <Compile Include="ViewModels\PortViewModel.cs" />
+    <Compile Include="ViewModels\ViewModelBase.cs" />
     <Compile Include="ViewModels\WorkspaceViewModel.cs" />
     <Compile Include="Views\ConnectorView.xaml.cs">
       <DependentUpon>ConnectorView.xaml</DependentUpon>

@@ -15,33 +15,22 @@ namespace Dynamo.UI.Wpf.ViewModels
     /// </summary>
     public class NodeViewModel : ReactiveObject
     {
-        #region Design-Time Sample Data Utils
-        [Obsolete]
-        public NodeViewModel()
-        {
-
-        }
-
-        [Obsolete("Use new NodeViewModel(Node)")]
-        public Node Model
-        {
-            set { Initialize(value); }
-        }
-        #endregion
-
         public NodeViewModel(Node model)
         {
-            Initialize(model);
+            Model = model;
+            Initialize();
         }
 
-        private void Initialize(Node model)
+        private void Initialize()
         {
-            InPorts = model.InPorts.CreateDerivedCollection(x => new PortViewModel(x));
-            OutPorts = model.OutPorts.CreateDerivedCollection(x => new PortViewModel(x));
-            nickName = model.NickNameChanged.ToProperty(this, x => x.NickName);
-            description = model.DescriptionChanged.ToProperty(this, x => x.Description);
-            argumentLacing = model.LacingChanged.ToProperty(this, x => x.ArgumentLacing);
+            InPorts = Model.InPorts.CreateDerivedCollection(x => new PortViewModel(x));
+            OutPorts = Model.OutPorts.CreateDerivedCollection(x => new PortViewModel(x));
+            nickName = Model.NickNameChanged.ToProperty(this, x => x.NickName);
+            description = Model.DescriptionChanged.ToProperty(this, x => x.Description);
+            argumentLacing = Model.LacingChanged.ToProperty(this, x => x.ArgumentLacing);
         }
+
+        internal readonly Node Model;
 
         /// <summary>
         ///     Displayed name of the node.
@@ -91,7 +80,7 @@ namespace Dynamo.UI.Wpf.ViewModels
         private bool isInteractionEnabled;
 
 
-        public IObservable<bool> NodeSelectedChanged;
+        //public IObservable<bool> NodeSelectedChanged;
 
 
 
