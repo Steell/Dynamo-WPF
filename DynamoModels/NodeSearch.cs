@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Configuration;
+using System.Data.Odbc;
 using System.Linq;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
@@ -50,51 +52,76 @@ namespace Dynamo.UI.Models
     public class NodeSearch : INodeSource
     {
         public IObservable<Node> NewNodeStream { get; private set; }
+        public IObservable<IEnumerable<NodeEntry>> LibraryStream { get; private set; }
 
         public NodeSearch(
             IObservable<string> searchQueryStream,
-            IObservable<NodeEntry> libraryStream)
+            IObservable<NodeEntry> newNodeEntryStream,
+            IObservable<NodeEntry> deletedNodeEntryStream)
         {
-            var queryStream =
-                searchQueryStream.Select(
-                    searchQuery =>
-                            string.IsNullOrEmpty(searchQuery)
-                                ? new Func<IEnumerable<NodeEntry>, IEnumerable<NodeEntry>>(x => x)
-                                : (entries =>
-                        entries.Select(
-                            entry => 
-                                new { Entry = entry, Distance = StringDistance(entry.Name, searchQuery) })
-                        .OrderByDescending(result => result.Distance)
-                        .Select(result => result.Entry)));
-        }
+            var libraryChangeStream = 
+                Observable.Merge(
+                    newNodeEntryStream.Select(LibraryUpdate.Add),
+                    deletedNodeEntryStream.Select(LibraryUpdate.Remove));
 
-        public struct SearchResult<T>
-        {
-            public T Result { get; private set; }
-            public double Distance { get; private set; }
+            var libraryStream = libraryChangeStream.Scan(
+                ImmutableHashSet<NodeEntry>.Empty, 
+                LibraryUpdate.UpdateLibrary);
 
-            public SearchResult(T result, double distance) 
-                : this()
-            {
-                Result = result;
-                Distance = distance;
-            }
+            LibraryStream = libraryStream.CombineLatest(searchQueryStream, GetSearchResults);
+            NewNodeStream =
+                LibraryStream
+                    .Select(library => library.Select(x => x.NewNodeStream).Merge())
+                    .Switch();
         }
 
         private static IEnumerable<NodeEntry> GetSearchResults(
-            IEnumerable<NodeEntry> nodeEntries, 
-            string searchQuery)
+            IEnumerable<NodeEntry> library, string searchQuery)
         {
             if (string.IsNullOrEmpty(searchQuery))
-                return nodeEntries;
+                return library;
 
             return
-                nodeEntries
-                    .Select(x => new { Entry = x, Distance = StringDistance(x.Name, searchQuery) })
-                    .OrderByDescending(x => x.Distance)
-                    .Select(x => x.Entry);
+                library.Select(
+                    entry => 
+                        new { Entry = entry, Distance = StringDistance(entry.Name, searchQuery) })
+                    .OrderByDescending(result => result.Distance)
+                    .Select(result => result.Entry);
         }
 
+        private struct LibraryUpdate
+        {
+            private enum LibraryChange { Add, Remove }
+
+            private LibraryChange changeType;
+            private NodeEntry entry;
+
+            public static LibraryUpdate Add(NodeEntry entry)
+            {
+                return new LibraryUpdate { changeType = LibraryChange.Add, entry = entry };
+            }
+
+            public static LibraryUpdate Remove(NodeEntry entry)
+            {
+                return new LibraryUpdate { changeType = LibraryChange.Remove, entry = entry };
+            }
+
+            public static ImmutableHashSet<NodeEntry> UpdateLibrary(
+                ImmutableHashSet<NodeEntry> library, 
+                LibraryUpdate update)
+            {
+                switch (update.changeType)
+                {
+                    case LibraryChange.Add:
+                        return library.Add(update.entry);
+                    case LibraryChange.Remove:
+                        return library.Remove(update.entry);
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
+            }
+        }
+        
         #region Jaro-Winkler String Similarity Algorithm
         private static double StringDistance(string firstWord, string secondWord)
         {

@@ -68,6 +68,7 @@
     <Compile Include="Dynamo.cs" />
     <Compile Include="LacingStrategy.cs" />
     <Compile Include="Node.cs" />
+    <Compile Include="NodeSearch.cs" />
     <Compile Include="Note.cs" />
     <Compile Include="PortModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
