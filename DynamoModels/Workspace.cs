@@ -162,7 +162,6 @@ namespace Dynamo.UI.Models
             IObservable<Connection<TNode, TMetaData>?> endNewConnectionStream,
             IObservable<TNode> nodeDeletedStream)
             : base(
-
                 //New connections are also triggered from disconnects
                 beginNewConnectionStream.Merge(disconnectStream.Select(x => x.Start)),
 
