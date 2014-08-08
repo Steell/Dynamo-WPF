@@ -70,6 +70,7 @@
     <Compile Include="ConsoleModel.cs" />
     <Compile Include="Dynamo.cs" />
     <Compile Include="LacingStrategy.cs" />
+    <Compile Include="NewCustomNodeEventArgs.cs" />
     <Compile Include="Node.cs" />
     <Compile Include="NodeSearch.cs" />
     <Compile Include="Note.cs" />

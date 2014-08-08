@@ -55,7 +55,6 @@ namespace Dynamo.UI.Wpf.ViewModels
         }
 
         public IReactiveCommand NewNodeCommand { get; private set; }
-        public IReactiveCommand DeleteNodeCommand { get; private set; }
 
         public string Name { get; private set; }
 
@@ -64,6 +63,10 @@ namespace Dynamo.UI.Wpf.ViewModels
         public IReactiveCollection<object> Selection { get; private set; }
 
         public IReactiveCommand NewNoteCommand { get; private set; }
+        public IReactiveCommand AutoLayoutCommand { get; private set; }
+        public IReactiveCommand SelectNeighborsCommand { get; private set; }
+        public IReactiveCommand DeleteSelectionCommand { get; private set; }
+        public IReactiveCommand SelectAllCommand { get; private set; }
 
         // CanFindNodesFromElements -- Flag determining whether or not we can find nodes by selected geometry
         // IsHomeSpace -- Is this the home workspace?
