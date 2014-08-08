@@ -1,13 +1,9 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.ObjectModel;
-using System.Reactive.Disposables;
 using System.Reactive.Linq;
-using System.Text;
 using System.Windows.Data;
-using System.ComponentModel;
+
 using Dynamo.UI.Models;
-using Dynamo.UI.Wpf.Views;
+
 using ObservableExtensions;
 using ReactiveUI;
 
@@ -66,6 +62,8 @@ namespace Dynamo.UI.Wpf.ViewModels
         public CompositeCollection WorkspaceElements { get; private set; }
 
         public IReactiveCollection<object> Selection { get; private set; }
+
+        public IReactiveCommand NewNoteCommand { get; private set; }
 
         // CanFindNodesFromElements -- Flag determining whether or not we can find nodes by selected geometry
         // IsHomeSpace -- Is this the home workspace?

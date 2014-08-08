@@ -1,10 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Text;
-using System.Windows.Data;
-using System.ComponentModel;
+﻿using System.Reactive.Linq;
+using System.Windows.Input;
+
+using Dynamo.UI.Models;
+
+using ReactiveUI;
 
 namespace Dynamo.UI.Wpf.ViewModels
 {
@@ -12,46 +11,34 @@ namespace Dynamo.UI.Wpf.ViewModels
     {
         public DynamoViewModel()
         {
-            Workspaces = new ObservableCollection<WorkspaceViewModel>();
-            Sidebars = new ObservableCollection<object>();
+            var currentWorkspaceStream =
+                this.ObservableForProperty(
+                    x => x.ActiveWorkspace,
+                    skipInitial: false)
+                .Select(x => x.GetValue());
+
+            addNoteCmd = 
+                currentWorkspaceStream.Select(x => x.NewNoteCommand)
+                    .ToProperty(this, x => x.AddNote);
+
+            var consoleStreams = Observable.Merge<LogEntry>();
+            Console = new ConsoleViewModel(consoleStreams);
         }
 
-        #region INotifyPropertyChanged
-        public event PropertyChangedEventHandler PropertyChanged;
+        /// <summary>
+        ///     Workspace which all workspace-focused commands act upon.
+        /// </summary>
+        public WorkspaceViewModel ActiveWorkspace
+        {
+            get { return activeWorkspace; }
+            set { this.RaiseAndSetIfChanged(ref activeWorkspace, value); }
+        }
+        private WorkspaceViewModel activeWorkspace;
 
-        private void NotifyPropertyChanged(String info)
-        {
-            if (PropertyChanged != null)
-            {
-                PropertyChanged(this, new PropertyChangedEventArgs(info));
-            }
-        }
-        #endregion
-        
-        private ObservableCollection<WorkspaceViewModel> workspaces;
-        public ObservableCollection<WorkspaceViewModel> Workspaces
-        {
-            get { return workspaces; }
-            set
-            {
-                workspaces = value;
-                NotifyPropertyChanged("Workspaces");
-            }
-        }
+        private readonly ObservableAsPropertyHelper<ICommand> addNoteCmd; 
+        public ICommand AddNote { get { return addNoteCmd.Value; } }
 
-        private ObservableCollection<object> sidebars;
-        public ObservableCollection<object> Sidebars
-        {
-            get
-            {
-                return sidebars; 
-            }
-            set
-            {
-                sidebars = value;
-                NotifyPropertyChanged("Sidebars");
-            }
-        }
+        public ConsoleViewModel Console { get; private set; }
 
         /* Properties */
 
