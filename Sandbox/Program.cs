@@ -6,7 +6,6 @@ using System.Reactive.Subjects;
 using Dynamo.UI.Models;
 using NUnit.Framework;
 using ObservableExtensions;
-using ObservableExtensions.Experimental;
 
 namespace Sandbox
 {

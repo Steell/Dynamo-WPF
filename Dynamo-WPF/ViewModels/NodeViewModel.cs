@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Reactive.Subjects;
-using System.Text;
-using System.Windows.Data;
-using System.ComponentModel;
-using Dynamo.UI.Models;
+﻿using Dynamo.UI.Models;
 using ReactiveUI;
 
 namespace Dynamo.UI.Wpf.ViewModels
