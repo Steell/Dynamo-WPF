@@ -9,6 +9,22 @@ namespace Dynamo.UI.Wpf.ViewModels
 {
     public class DynamoViewModel : ViewModelBase
     {
+        public interface ICanExportSTL
+        {
+            ICommand ExportSTLCommand { get; }
+        }
+
+        public interface ICanExecute 
+        {
+            ICommand RunGraphCommand { get; }
+            ICommand ForceRunGraphCommand { get; }
+        }
+
+        public interface ICanBePublished
+        {
+            ICommand PublishCommand { get; }
+        }
+
         public DynamoViewModel()
         {
             #region Initialize Active Workspace Operations
@@ -35,6 +51,42 @@ namespace Dynamo.UI.Wpf.ViewModels
             selectAllCmd = 
                 currentWorkspaceStream.Select(x => x.SelectAllCommand)
                     .ToProperty(this, x => x.SelectAll);
+
+            #region Home Workspace Only
+            exportSTLCmd =
+                currentWorkspaceStream.Select(
+                    ws =>
+                        ws is ICanExportSTL
+                            ? (ws as ICanExportSTL).ExportSTLCommand
+                            : ReactiveCommand.Create(Observable.Never<bool>()))
+                    .ToProperty(this, x => x.ExportSTL);
+
+            runCmd =
+                currentWorkspaceStream.Select(
+                    ws =>
+                        ws is ICanExecute
+                            ? (ws as ICanExecute).RunGraphCommand
+                            : ReactiveCommand.Create(Observable.Never<bool>()))
+                    .ToProperty(this, x => x.RunGraph);
+
+            forceRunCmd =
+                currentWorkspaceStream.Select(
+                    ws =>
+                        ws is ICanExecute
+                            ? (ws as ICanExecute).ForceRunGraphCommand
+                            : ReactiveCommand.Create(Observable.Never<bool>()))
+                    .ToProperty(this, x => x.ForceRunGraph);
+            #endregion
+
+            #region Custom Node Workspace Only
+            publishActiveWorkspaceCmd =
+                currentWorkspaceStream.Select(
+                    ws =>
+                        ws is ICanBePublished
+                            ? (ws as ICanBePublished).PublishCommand
+                            : ReactiveCommand.Create(Observable.Never<bool>()))
+                    .ToProperty(this, x => x.PublishActiveWorkspace);
+            #endregion
             #endregion
 
             var newCustomNodeCmd = ReactiveCommand.Create();
@@ -107,6 +159,31 @@ namespace Dynamo.UI.Wpf.ViewModels
         private readonly ObservableAsPropertyHelper<ICommand> saveAsCmd;
 
         /// <summary>
+        ///     Exports geometry created by the active workspace as an STL file.
+        /// </summary>
+        //TODO: Because the UI needs to display a dialog, it should probably not be a command.
+        public ICommand ExportSTL { get { return exportSTLCmd.Value; } }
+        private readonly ObservableAsPropertyHelper<ICommand> exportSTLCmd;
+
+        /// <summary>
+        ///     Compiles and executes the active workspace.
+        /// </summary>
+        public ICommand RunGraph { get { return runCmd.Value; } }
+        private readonly ObservableAsPropertyHelper<ICommand> runCmd;
+
+        /// <summary>
+        ///     Compiles and executes the active workspace.
+        /// </summary>
+        public ICommand ForceRunGraph { get { return forceRunCmd.Value; } }
+        private readonly ObservableAsPropertyHelper<ICommand> forceRunCmd;
+
+        /// <summary>
+        ///     Publishes the active Custom Node workspace to the package manager.
+        /// </summary>
+        public ICommand PublishActiveWorkspace { get { return publishActiveWorkspaceCmd.Value; } }
+        private readonly ObservableAsPropertyHelper<ICommand> publishActiveWorkspaceCmd; 
+
+        /// <summary>
         ///     Creates a new, blank Custom Node workspace with name, description, and category
         ///     taken from the given NewCustomNodeEventArgs argument.
         /// </summary>
@@ -159,7 +236,7 @@ namespace Dynamo.UI.Wpf.ViewModels
         //     Paste
 
         // Home Workspace Forwarding
-        //     ExportToSTL
+        //     ExportToSTL*
         //     RunExpression
         //     ForceRunExpression
         //     -----------
