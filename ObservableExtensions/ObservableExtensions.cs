@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
@@ -160,6 +161,20 @@ namespace ObservableExtensions
             Func<TSource1, TSource2, T> selector)
         {
             return first.Select(f => second.Select(s => selector(f, s)));
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="source"></param>
+        /// <param name="count"></param>
+        /// <param name="onlyAtCapacity"></param>
+        /// <returns></returns>
+        public static IObservable<IEnumerable<T>> BufferOverlap<T>(this IObservable<T> source, int count, bool onlyAtCapacity=false)
+        {
+            var result = source.Scan(ImmutableQueue<T>.Empty, (queue, arg2) => queue.Enqueue(arg2));
+            return onlyAtCapacity ? result.Skip(count - 1) : result;
         }
 
         /// <summary>
