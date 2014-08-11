@@ -97,6 +97,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="ViewModels\Interfaces.cs" />
     <Compile Include="ViewModels\NewCustomNodeEventArgs.cs" />
     <Compile Include="ViewModels\NodeLibraryViewModel.cs" />
     <Compile Include="ViewModels\ConnectorViewModel.cs" />

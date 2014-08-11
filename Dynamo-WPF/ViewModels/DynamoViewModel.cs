@@ -12,7 +12,7 @@ namespace Dynamo.UI.Wpf.ViewModels
 {
     public class DynamoViewModel : ViewModelBase
     {
-        public const uint RECENT_FILE_AMOUNT = 5;
+        public const int RECENT_FILE_AMOUNT = 5;
 
         public DynamoViewModel()
         {
@@ -100,14 +100,14 @@ namespace Dynamo.UI.Wpf.ViewModels
 
             DynamoModel model = null; //TODO
 
-            recentFiles = 
-                model.RecentFiles.BufferOverlap(5)
+            recentFiles =
+                model.RecentFiles.BufferOverlap(RECENT_FILE_AMOUNT)
                     .Select(x => x.ToList())
                     .ToProperty(this, x => x.RecentFiles);
 
             var runAutoStream = this.ObservableForProperty(x => x.RunningAutomatically);
             
-            var consoleStreams = Observable.Merge<LogEntry>();
+            var consoleStreams = Observable.Merge<LogEntry>().StartWith(new LogEntry("Welcome To Dynamo!"));
             Console = new ConsoleViewModel(consoleStreams);
         }
 
