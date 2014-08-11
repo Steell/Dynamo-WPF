@@ -1,59 +1,65 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Reactive.Linq;
 using System.Windows.Input;
-
 using Dynamo.UI.Models;
-
+using ObservableExtensions;
 using ReactiveUI;
+using DynamoModel = Dynamo.UI.Models.Dynamo;
 
 namespace Dynamo.UI.Wpf.ViewModels
 {
     public class DynamoViewModel : ViewModelBase
     {
+        public const uint RECENT_FILE_AMOUNT = 5;
+
         public DynamoViewModel()
         {
             #region Active Workspace Operations
-            var currentWorkspaceStream =
+            var activeWorkspaceStream =
                 this.ObservableForProperty(x => x.ActiveWorkspace)
                     .Select(x => x.GetValue());
 
+            #region Graph Workspaces Only
             addNoteCmd = 
-                CreateCommandForSubtype<IAmAGraph>(currentWorkspaceStream, x => x.NewNoteCommand)
+                CreateCommandForSubtype<IGraphViewModel>(activeWorkspaceStream, x => x.NewNoteCommand)
                     .ToProperty(this, x => x.AddNote);
 
             autoLayoutCmd =
-                CreateCommandForSubtype<IAmAGraph>(currentWorkspaceStream, x => x.AutoLayoutCommand)
+                CreateCommandForSubtype<IGraphViewModel>(activeWorkspaceStream, x => x.AutoLayoutCommand)
                     .ToProperty(this, x => x.AutoLayout);
 
             selectNeighborsCmd =
-                CreateCommandForSubtype<IAmAGraph>(currentWorkspaceStream, x => x.SelectNeighborsCommand)
+                CreateCommandForSubtype<IGraphViewModel>(activeWorkspaceStream, x => x.SelectNeighborsCommand)
                     .ToProperty(this, x => x.SelectNeighbors);
 
             deleteSelectedCmd =
-                CreateCommandForSubtype<IAmAGraph>(currentWorkspaceStream, x => x.DeleteSelectionCommand)
+                CreateCommandForSubtype<IGraphViewModel>(activeWorkspaceStream, x => x.DeleteSelectionCommand)
                     .ToProperty(this, x => x.DeleteSelected);
 
             selectAllCmd =
-                CreateCommandForSubtype<IAmAGraph>(currentWorkspaceStream, x => x.SelectAllCommand)
+                CreateCommandForSubtype<IGraphViewModel>(activeWorkspaceStream, x => x.SelectAllCommand)
                     .ToProperty(this, x => x.SelectAll);
+            #endregion
 
             #region Home Workspace Only
             exportSTLCmd =
-                CreateCommandForSubtype<ICanExportSTL>(currentWorkspaceStream, x => x.ExportSTLCommand)
+                CreateCommandForSubtype<ICanExportSTL>(activeWorkspaceStream, x => x.ExportSTLCommand)
                     .ToProperty(this, x => x.ExportSTL);
 
             runCmd =
-                CreateCommandForSubtype<ICanExecute>(currentWorkspaceStream, x => x.RunGraphCommand)
+                CreateCommandForSubtype<ICanExecute>(activeWorkspaceStream, x => x.RunGraphCommand)
                     .ToProperty(this, x => x.RunGraph);
 
             forceRunCmd =
-                CreateCommandForSubtype<ICanExecute>(currentWorkspaceStream, x => x.ForceRunGraphCommand)
+                CreateCommandForSubtype<ICanExecute>(activeWorkspaceStream, x => x.ForceRunGraphCommand)
                     .ToProperty(this, x => x.ForceRunGraph);
             #endregion
 
             #region Custom Node Workspace Only
             publishActiveWorkspaceCmd =
-                currentWorkspaceStream.Select(
+                activeWorkspaceStream.Select(
                     ws =>
                         ws is ICanBePublished
                             ? (ws as ICanBePublished).PublishCommand
@@ -70,14 +76,116 @@ namespace Dynamo.UI.Wpf.ViewModels
             NewHomeWorkspace = newHomeWorkspaceCmd;
             var newHomeWorkspaceStream = newHomeWorkspaceCmd.Cast<NewHomeWorkspaceEventArgs>();
 
-            var displayStartPageCmd = ReactiveCommand.Create();
+            var displayStartPageCmd =
+                ReactiveCommand.Create(
+                    activeWorkspaceStream.Select(x => !(x is StartPageViewModel)));
             DisplayStartPage = displayStartPageCmd;
             var displayStartPageStream = displayStartPageCmd;
 
+            var openWorkspaceCmd = ReactiveCommand.Create();
+            OpenWorkspace = openWorkspaceCmd;
+            var openWorkspaceStream = openWorkspaceCmd.Cast<string>();
+
+            var showConsoleCmd = ReactiveCommand.Create();
+            ShowConsole = showConsoleCmd;
+            var showConsoleStream = showConsoleCmd;
+
+            var exitDynamoCmd = ReactiveCommand.Create();
+            ExitDynamo = exitDynamoCmd;
+            var exitDynamoStream = exitDynamoCmd;
+
+            var importLibraryCmd = ReactiveCommand.Create();
+            ImportLibrary = importLibraryCmd;
+            var importLibraryStream = importLibraryCmd.Cast<string>();
+
+            DynamoModel model = null; //TODO
+
+            recentFiles = 
+                model.RecentFiles.BufferOverlap(5)
+                    .Select(x => x.ToList())
+                    .ToProperty(this, x => x.RecentFiles);
+
+            var runAutoStream = this.ObservableForProperty(x => x.RunningAutomatically);
+            
             var consoleStreams = Observable.Merge<LogEntry>();
             Console = new ConsoleViewModel(consoleStreams);
         }
 
+        #region Properties
+        // RunInDebug TODO: move to workspace
+        // ConnectorType
+        // IsShowingConnectors
+        // AlternateContextGeometryDisplayText
+        // VisualizationManager.AlternateDrawingContextAvailable
+        // VisualizationManager.DrawToAlternateContext
+        // FullscreenWatchShowing
+        // IsUsageReportingApproved
+        // IsAnalyticsReportingApproved
+        // MaxTesselationDivisions
+        // IsDebugBuild
+        // VerboseLogging
+        // ShowDebugASTs
+        // RunEnabled
+        // ShouldBeHitTestVisible
+        // IsHomeSpace
+        // WatchPreviewHitTest
+        // CurrentWorkspaceIndex
+        // ViewingHomespace
+        // LogText
+        // DynamicRunEnabled
+        // CanRunDynamically
+        #endregion
+        #region Commands
+        // Active Workspace Forwarding
+        //     -----------                         --+
+        //     PublishSelectedNodes                  |
+        //     ShowSaveImageDialogAndSaveResult      |
+        //     ShowSaveDialogIfNeededAndSaveResult   +-- Dialogs should be Views that use the Workspace as a ViewModel (these probably shouldn't even be commands...)
+        //     ShowSaveDialogAndSaveResult           |
+        //     -----------                         --+
+        //     Copy
+        //     Paste
+
+        // Home Workspace Forwarding
+        //     CancelRun
+        
+        // Loading
+        //     OpenRecent TODO: expost a list of recent files, UI feeds elements from list back into Open command.
+
+        // Command Playback
+        //     SaveRecorded
+        //     InsertPlayPausePlayback
+        //     Undo
+        //     Redo
+        
+        // CloseWorkspace (Formerly "Hide") TODO: this should just watch for changes in the observable collection of workspaces
+        // SetConnectorType
+        // ShowHideConnectors
+
+        // ToggleFullscreenWatchShowing
+        // ToggleCanNavigateBackground
+
+        // ShowPackageManagerSearch
+        // ShowInstalledPackages
+
+        // ToggleIsUsageReportingApproved
+        // ToggleIsAnalyticsReportingApproved
+
+        // SetLengthUnit
+        // SetAreaUnit
+        // SetVolumeUnit
+        // SetNumberFormat
+
+        // ReportABug
+        // GoToSourceCode
+        // GoToWiki
+        // ShowAboutWindow
+        // MutateTestDelegate
+        // UpdateManager.CheckNewerDailyBuilds
+        // UpdateManager.ForceUpdate
+        #endregion
+
+        #region Private Helpers
         private static IObservable<ICommand> CreateCommandForSubtype<T>(
             IObservable<object> source,
             Func<T, ICommand> selector)
@@ -86,18 +194,36 @@ namespace Dynamo.UI.Wpf.ViewModels
         }
 
         private static readonly ICommand inactiveCommand = ReactiveCommand.Create(Observable.Return(false));
+        #endregion
+
+        /// <summary>
+        ///     List of recently opened files.
+        /// </summary>
+        public List<string> RecentFiles { get { return recentFiles.Value; } }
+        private readonly ObservableAsPropertyHelper<List<string>> recentFiles;
+
+        /// <summary>
+        ///     Determines if the active workspace is running automatically.
+        ///     TODO: This should belong on home workspace.
+        /// </summary>
+        public bool RunningAutomatically
+        {
+            get { return runAuto; }
+            set { this.RaiseAndSetIfChanged(ref runAuto, value); }
+        }
+        private bool runAuto;
 
         /// <summary>
         ///     Workspace which all workspace-focused commands act upon.
         /// </summary>
-        public object ActiveWorkspace
+        // TODO: Model shouldn't report active workspace? It will receive a stream specifying the active workspace.
+        public AWorkspaceViewModel ActiveWorkspace
         {
             get { return activeWorkspace; }
             set { this.RaiseAndSetIfChanged(ref activeWorkspace, value); }
         }
-        private object activeWorkspace;
-
-
+        private AWorkspaceViewModel activeWorkspace;
+        
         /// <summary>
         ///     The Dynamo Console.
         /// </summary>
@@ -172,6 +298,11 @@ namespace Dynamo.UI.Wpf.ViewModels
         private readonly ObservableAsPropertyHelper<ICommand> forceRunCmd;
 
         /// <summary>
+        ///     Cancels an in-progress execution of the active workspace.
+        /// </summary>
+        public ICommand CancelRun { get; private set; }
+
+        /// <summary>
         ///     Publishes the active Custom Node workspace to the package manager.
         /// </summary>
         public ICommand PublishActiveWorkspace { get { return publishActiveWorkspaceCmd.Value; } }
@@ -190,113 +321,30 @@ namespace Dynamo.UI.Wpf.ViewModels
         public ICommand NewHomeWorkspace { get; private set; }
 
         /// <summary>
-        ///     Re-displays the Dynamo Start Page by adding it to the Workspaces collection and
-        ///     setting it as the active workspace.
+        ///     Re-displays the Dynamo Start Page by adding it to the Workspaces collection (if 
+        ///     necessary) and setting it as the active workspace.
         /// </summary>
         public ICommand DisplayStartPage { get; private set; }
 
-        /* Properties */
+        /// <summary>
+        ///     Opens a workspace from a file. The path to the file is given as a string argument.
+        /// </summary>
+        public ICommand OpenWorkspace { get; private set; }
 
-        // RunInDebug
-        // ConsoleHeight
-        // RecentFiles
-        // ConnectorType
-        // IsShowingConnectors
-        // AlternateContextGeometryDisplayText
-        // VisualizationManager.AlternateDrawingContextAvailable
-        // VisualizationManager.DrawToAlternateContext
-        // FullscreenWatchShowing
-        // IsUsageReportingApproved
-        // IsAnalyticsReportingApproved
-        // MaxTesselationDivisions
-        // IsDebugBuild
-        // VerboseLogging
-        // ShowDebugASTs
-        // RunEnabled
-        // ShouldBeHitTestVisible
-        // IsHomeSpace
-        // WatchPreviewHitTest
-        // CurrentWorkspaceIndex
-        // ViewingHomespace
-        // LogText
-        // DynamicRunEnabled
-        // CanRunDynamically
+        /// <summary>
+        ///     Displays the Dynamo Console.
+        /// </summary>
+        public ICommand ShowConsole { get; private set; }
 
+        /// <summary>
+        ///     Exits Dynamo.
+        /// </summary>
+        public ICommand ExitDynamo { get; private set; }
 
-
-        /* Commands */
-
-        // Active Workspace Forwarding
-        //     GraphAutoLayout*
-        //     AddNote*
-        //     SelectNeighbors*
-        //     Delete*
-        //     SelectAll*
-        //     -----------                         --+
-        //     PublishSelectedNodes                  |
-        //     ShowSaveImageDialogAndSaveResult      |
-        //     ShowSaveDialogIfNeededAndSaveResult   +-- Dialogs should be Views that use the Workspace as a ViewModel (these probably shouldn't even be commands...)
-        //     ShowSaveDialogAndSaveResult           |
-        //     -----------                         --+
-        //     Copy
-        //     Paste
-
-        // Home Workspace Forwarding
-        //     ExportToSTL*
-        //     RunExpression*
-        //     ForceRunExpression*
-        //     -----------
-        //     CancelRun
-
-        // Custom Node Workspace Forwarding
-        //     PublishCurrentWorkspace
-
-        // Workspace Creation
-        //     NewHomeWorkspace
-        //     NewCustomNode*
-        //     DisplayStartPage
-        
-        // Loading
-        //     ShowOpenDialogAndOpenResult
-        //     OpenRecent
-        
-        // Command Playback
-        //     SaveRecorded
-        //     InsertPlayPausePlayback
-        //     Undo
-        //     Redo
-        
-        // Console
-        //     ToggleConsoleShowing
-        //     ClearLog
-
-        // CloseWorkspace (Formerly "Hide")
-        // Exit
-        // SetConnectorType
-        // ShowHideConnectors
-        
-        // ToggleFullscreenWatchShowing
-        // ToggleCanNavigateBackground
-        
-        // ImportLibrary
-        
-        // ShowPackageManagerSearch
-        // ShowInstalledPackages
-
-        // ToggleIsUsageReportingApproved
-        // ToggleIsAnalyticsReportingApproved
-
-        // SetLengthUnit
-        // SetAreaUnit
-        // SetVolumeUnit
-        // SetNumberFormat
-
-        // ReportABug
-        // GoToSourceCode
-        // GoToWiki
-        // ShowAboutWindow
-        // MutateTestDelegate
-        // UpdateManager.CheckNewerDailyBuilds
-        // UpdateManager.ForceUpdate
+        /// <summary>
+        ///     Imports nodes into the Dynamo Library from a DLL. The path the the DLL file is given
+        ///     as a string argument.
+        /// </summary>
+        public ICommand ImportLibrary { get; private set; }
     }
 }

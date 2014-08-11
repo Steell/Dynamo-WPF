@@ -11,7 +11,15 @@ namespace Dynamo.UI.Wpf.ViewModels
 {
     public abstract class AWorkspaceViewModel : ViewModelBase
     {
-        
+        public abstract string Name { get; }
+    }
+
+    public class StartPageViewModel : AWorkspaceViewModel
+    {
+        public override string Name
+        {
+            get { return "Start"; }
+        }
     }
 
     public class WorkspaceViewModel : AWorkspaceViewModel

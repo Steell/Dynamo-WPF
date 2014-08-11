@@ -1,13 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Input;
+﻿using System.Windows.Input;
 
 namespace Dynamo.UI.Wpf.ViewModels
 {
-    public interface IAmAGraph
+    public interface IGraphViewModel
     {
         ICommand NewNoteCommand { get; }
         ICommand AutoLayoutCommand { get; }
