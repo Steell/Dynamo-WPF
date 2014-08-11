@@ -13,4 +13,9 @@
             Name = name;
         }
     }
+
+    public class NewHomeWorkspaceEventArgs
+    {
+        
+    }
 }

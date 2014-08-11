@@ -20,4 +20,17 @@
             MakeActive = makeActive;
         }
     }
+
+    /// <summary>
+    ///     Information describing a home workspace creation actie.
+    /// </summary>
+    public class NewHomeWorkspaceEventArgs : Models.NewHomeWorkspaceEventArgs
+    {
+        public bool MakeActive { get; private set; }
+
+        public NewHomeWorkspaceEventArgs(bool makeActive = true)
+        {
+            MakeActive = makeActive;
+        }
+    }
 }

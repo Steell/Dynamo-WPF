@@ -27,7 +27,7 @@ namespace Dynamo.UI.Wpf.ViewModels
 
         public DynamoViewModel()
         {
-            #region Initialize Active Workspace Operations
+            #region Active Workspace Operations
             var currentWorkspaceStream =
                 this.ObservableForProperty(x => x.ActiveWorkspace, skipInitial: false)
                     .Select(x => x.GetValue());
@@ -93,6 +93,14 @@ namespace Dynamo.UI.Wpf.ViewModels
             NewCustomNode = newCustomNodeCmd;
             var newCustomNodeStream = newCustomNodeCmd.Cast<NewCustomNodeEventArgs>();
 
+            var newHomeWorkspaceCmd = ReactiveCommand.Create();
+            NewHomeWorkspace = newHomeWorkspaceCmd;
+            var newHomeWorkspaceStream = newHomeWorkspaceCmd.Cast<NewHomeWorkspaceEventArgs>();
+
+            var displayStartPageCmd = ReactiveCommand.Create();
+            DisplayStartPage = displayStartPageCmd;
+            var displayStartPageStream = displayStartPageCmd;
+
             var consoleStreams = Observable.Merge<LogEntry>();
             Console = new ConsoleViewModel(consoleStreams);
         }
@@ -107,6 +115,11 @@ namespace Dynamo.UI.Wpf.ViewModels
         }
         private WorkspaceViewModel activeWorkspace;
 
+
+
+        /// <summary>
+        ///     The Dynamo Console.
+        /// </summary>
         public ConsoleViewModel Console { get; private set; }
 
         /// <summary>
@@ -189,6 +202,18 @@ namespace Dynamo.UI.Wpf.ViewModels
         /// </summary>
         public ICommand NewCustomNode { get; private set; }
 
+        /// <summary>
+        ///     Creates a new, blank Home workspace initialized from the given
+        ///     NewHomeWorkspaceEventArgs argument.
+        /// </summary>
+        public ICommand NewHomeWorkspace { get; private set; }
+
+        /// <summary>
+        ///     Re-displays the Dynamo Start Page by adding it to the Workspaces collection and
+        ///     setting it as the active workspace.
+        /// </summary>
+        public ICommand DisplayStartPage { get; private set; }
+
         /* Properties */
 
         // RunInDebug
@@ -237,8 +262,8 @@ namespace Dynamo.UI.Wpf.ViewModels
 
         // Home Workspace Forwarding
         //     ExportToSTL*
-        //     RunExpression
-        //     ForceRunExpression
+        //     RunExpression*
+        //     ForceRunExpression*
         //     -----------
         //     CancelRun
 
