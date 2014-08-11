@@ -1,4 +1,5 @@
-﻿using System.Reactive.Linq;
+﻿using System;
+using System.Reactive.Linq;
 using System.Windows.Input;
 
 using Dynamo.UI.Models;
@@ -9,72 +10,44 @@ namespace Dynamo.UI.Wpf.ViewModels
 {
     public class DynamoViewModel : ViewModelBase
     {
-        public interface ICanExportSTL
-        {
-            ICommand ExportSTLCommand { get; }
-        }
-
-        public interface ICanExecute 
-        {
-            ICommand RunGraphCommand { get; }
-            ICommand ForceRunGraphCommand { get; }
-        }
-
-        public interface ICanBePublished
-        {
-            ICommand PublishCommand { get; }
-        }
-
         public DynamoViewModel()
         {
             #region Active Workspace Operations
             var currentWorkspaceStream =
-                this.ObservableForProperty(x => x.ActiveWorkspace, skipInitial: false)
+                this.ObservableForProperty(x => x.ActiveWorkspace)
                     .Select(x => x.GetValue());
 
             addNoteCmd = 
-                currentWorkspaceStream.Select(x => x.NewNoteCommand)
+                CreateCommandForSubtype<IAmAGraph>(currentWorkspaceStream, x => x.NewNoteCommand)
                     .ToProperty(this, x => x.AddNote);
 
-            autoLayoutCmd = 
-                currentWorkspaceStream.Select(x => x.AutoLayoutCommand)
+            autoLayoutCmd =
+                CreateCommandForSubtype<IAmAGraph>(currentWorkspaceStream, x => x.AutoLayoutCommand)
                     .ToProperty(this, x => x.AutoLayout);
 
-            selectNeighborsCmd = 
-                currentWorkspaceStream.Select(x => x.SelectNeighborsCommand)
+            selectNeighborsCmd =
+                CreateCommandForSubtype<IAmAGraph>(currentWorkspaceStream, x => x.SelectNeighborsCommand)
                     .ToProperty(this, x => x.SelectNeighbors);
 
             deleteSelectedCmd =
-                currentWorkspaceStream.Select(x => x.DeleteSelectionCommand)
+                CreateCommandForSubtype<IAmAGraph>(currentWorkspaceStream, x => x.DeleteSelectionCommand)
                     .ToProperty(this, x => x.DeleteSelected);
 
-            selectAllCmd = 
-                currentWorkspaceStream.Select(x => x.SelectAllCommand)
+            selectAllCmd =
+                CreateCommandForSubtype<IAmAGraph>(currentWorkspaceStream, x => x.SelectAllCommand)
                     .ToProperty(this, x => x.SelectAll);
 
             #region Home Workspace Only
             exportSTLCmd =
-                currentWorkspaceStream.Select(
-                    ws =>
-                        ws is ICanExportSTL
-                            ? (ws as ICanExportSTL).ExportSTLCommand
-                            : ReactiveCommand.Create(Observable.Never<bool>()))
+                CreateCommandForSubtype<ICanExportSTL>(currentWorkspaceStream, x => x.ExportSTLCommand)
                     .ToProperty(this, x => x.ExportSTL);
 
             runCmd =
-                currentWorkspaceStream.Select(
-                    ws =>
-                        ws is ICanExecute
-                            ? (ws as ICanExecute).RunGraphCommand
-                            : ReactiveCommand.Create(Observable.Never<bool>()))
+                CreateCommandForSubtype<ICanExecute>(currentWorkspaceStream, x => x.RunGraphCommand)
                     .ToProperty(this, x => x.RunGraph);
 
             forceRunCmd =
-                currentWorkspaceStream.Select(
-                    ws =>
-                        ws is ICanExecute
-                            ? (ws as ICanExecute).ForceRunGraphCommand
-                            : ReactiveCommand.Create(Observable.Never<bool>()))
+                CreateCommandForSubtype<ICanExecute>(currentWorkspaceStream, x => x.ForceRunGraphCommand)
                     .ToProperty(this, x => x.ForceRunGraph);
             #endregion
 
@@ -105,16 +78,24 @@ namespace Dynamo.UI.Wpf.ViewModels
             Console = new ConsoleViewModel(consoleStreams);
         }
 
+        private static IObservable<ICommand> CreateCommandForSubtype<T>(
+            IObservable<object> source,
+            Func<T, ICommand> selector)
+        {
+            return source.Select(ws => ws is T ? selector((T)ws) : inactiveCommand);
+        }
+
+        private static readonly ICommand inactiveCommand = ReactiveCommand.Create(Observable.Return(false));
+
         /// <summary>
         ///     Workspace which all workspace-focused commands act upon.
         /// </summary>
-        public WorkspaceViewModel ActiveWorkspace
+        public object ActiveWorkspace
         {
             get { return activeWorkspace; }
             set { this.RaiseAndSetIfChanged(ref activeWorkspace, value); }
         }
-        private WorkspaceViewModel activeWorkspace;
-
+        private object activeWorkspace;
 
 
         /// <summary>
