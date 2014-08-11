@@ -204,7 +204,7 @@ namespace Dynamo.UI.Wpf.ViewModels
 
         /// <summary>
         ///     Determines if the active workspace is running automatically.
-        ///     TODO: This should belong on home workspace.
+        ///     TODO: This belongs on home workspace.
         /// </summary>
         public bool RunningAutomatically
         {
