@@ -1,7 +1,8 @@
 ﻿using System;
+using System.Reactive;
 using System.Reactive.Linq;
 using System.Windows.Data;
-
+using System.Windows.Input;
 using Dynamo.UI.Models;
 
 using ObservableExtensions;
@@ -22,12 +23,19 @@ namespace Dynamo.UI.Wpf.ViewModels
         }
     }
 
+    public interface ISelectable
+    {
+        IObservable<bool> SelectionChangedStream { get; }
+    }
+
     public class WorkspaceViewModel : AWorkspaceViewModel
     {
         /* Properties */
 
-        public WorkspaceViewModel(Workspace model)
+        public WorkspaceViewModel()
         {
+            Workspace model = null; //TODO
+
             var nodes = new ReactiveList<Node>();
             var connectors = new ReactiveList<Connector<Node, int>>();
             var notes = new ReactiveList<Note>();
@@ -59,22 +67,23 @@ namespace Dynamo.UI.Wpf.ViewModels
                 //    .Subscribe(selection.Add));
 
             WorkspaceElements = new CompositeCollection { nodeVMs, connectorVMs, noteVMs };
-            Name = "NODE";  //TODO model.Filename;
         }
-
-        public IReactiveCommand NewNodeCommand { get; private set; }
-
-        public string Name { get; private set; }
 
         public CompositeCollection WorkspaceElements { get; private set; }
 
         public IReactiveCollection<object> Selection { get; private set; }
+        
+        public ICommand NewNodeCommand { get; private set; }
+        public ICommand NewNoteCommand { get; private set; }
+        public ICommand AutoLayoutCommand { get; private set; }
+        public ICommand SelectNeighborsCommand { get; private set; }
+        public ICommand DeleteSelectionCommand { get; private set; }
+        public ICommand SelectAllCommand { get; private set; }
 
-        public IReactiveCommand NewNoteCommand { get; private set; }
-        public IReactiveCommand AutoLayoutCommand { get; private set; }
-        public IReactiveCommand SelectNeighborsCommand { get; private set; }
-        public IReactiveCommand DeleteSelectionCommand { get; private set; }
-        public IReactiveCommand SelectAllCommand { get; private set; }
+        public override string Name
+        {
+            get { throw new NotImplementedException(); }
+        }
 
         // CanFindNodesFromElements -- Flag determining whether or not we can find nodes by selected geometry
         // IsHomeSpace -- Is this the home workspace?

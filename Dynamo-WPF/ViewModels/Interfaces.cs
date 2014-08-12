@@ -1,4 +1,5 @@
-﻿using System.Windows.Input;
+﻿using System;
+using System.Windows.Input;
 
 namespace Dynamo.UI.Wpf.ViewModels
 {
@@ -25,5 +26,10 @@ namespace Dynamo.UI.Wpf.ViewModels
     public interface ICanBePublished
     {
         ICommand PublishCommand { get; }
+    }
+    
+    public interface ISelectable
+    {
+        IObservable<bool> SelectionChangedStream { get; }
     }
 }
