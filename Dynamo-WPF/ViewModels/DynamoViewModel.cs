@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive;
 using System.Reactive.Linq;
 using System.Windows.Input;
 using Dynamo.UI.Models;
@@ -41,8 +42,9 @@ namespace Dynamo.UI.Wpf.ViewModels
             selectAllCmd =
                 CreateCommandForSubtype<IGraphViewModel>(activeWorkspaceStream, x => x.SelectAllCommand)
                     .ToProperty(this, x => x.SelectAll);
-            #endregion
 
+            var addNodeCmdStream = CreateCommandForSubtype<IGraphViewModel>(activeWorkspaceStream, x => x.NewNodeCommand);
+            #endregion
             #region Home Workspace Only
             exportSTLCmd =
                 CreateCommandForSubtype<ICanExportSTL>(activeWorkspaceStream, x => x.ExportSTLCommand)
@@ -56,14 +58,9 @@ namespace Dynamo.UI.Wpf.ViewModels
                 CreateCommandForSubtype<ICanExecute>(activeWorkspaceStream, x => x.ForceRunGraphCommand)
                     .ToProperty(this, x => x.ForceRunGraph);
             #endregion
-
             #region Custom Node Workspace Only
             publishActiveWorkspaceCmd =
-                activeWorkspaceStream.Select(
-                    ws =>
-                        ws is ICanBePublished
-                            ? (ws as ICanBePublished).PublishCommand
-                            : ReactiveCommand.Create(Observable.Never<bool>()))
+                CreateCommandForSubtype<ICanBePublished>(activeWorkspaceStream, x => x.PublishCommand)
                     .ToProperty(this, x => x.PublishActiveWorkspace);
             #endregion
             #endregion
@@ -80,7 +77,7 @@ namespace Dynamo.UI.Wpf.ViewModels
                 ReactiveCommand.Create(
                     activeWorkspaceStream.Select(x => !(x is StartPageViewModel)));
             DisplayStartPage = displayStartPageCmd;
-            var displayStartPageStream = displayStartPageCmd;
+            var displayStartPageStream = displayStartPageCmd.Select(_ => Unit.Default);
 
             var openWorkspaceCmd = ReactiveCommand.Create();
             OpenWorkspace = openWorkspaceCmd;
@@ -98,17 +95,28 @@ namespace Dynamo.UI.Wpf.ViewModels
             ImportLibrary = importLibraryCmd;
             var importLibraryStream = importLibraryCmd.Cast<string>();
 
-            DynamoModel model = null; //TODO
+            var runAutoStream =
+                this.ObservableForProperty(x => x.RunningAutomatically).Select(x => x.GetValue());
+
+            var consoleStreams = Observable.Merge<LogEntry>().StartWith(new LogEntry("Welcome To Dynamo!"));
+
+            var model = new DynamoModel(
+                customNodes: newCustomNodeStream,
+                homeWorkspaces: newHomeWorkspaceStream,
+                displayStartPage: displayStartPageStream,
+                openWorkspace: openWorkspaceStream,
+                importLibrary: importLibraryStream,
+                runAuto: runAutoStream
+            );
 
             recentFiles =
                 model.RecentFiles.BufferOverlap(RECENT_FILE_AMOUNT)
                     .Select(x => x.ToList())
                     .ToProperty(this, x => x.RecentFiles);
 
-            var runAutoStream = this.ObservableForProperty(x => x.RunningAutomatically);
-            
-            var consoleStreams = Observable.Merge<LogEntry>().StartWith(new LogEntry("Welcome To Dynamo!"));
+            //TODO: these should be initialized from the model
             Console = new ConsoleViewModel(consoleStreams);
+            Library = new NodeLibraryViewModel();
         }
 
         #region Properties
@@ -228,6 +236,11 @@ namespace Dynamo.UI.Wpf.ViewModels
         ///     The Dynamo Console.
         /// </summary>
         public ConsoleViewModel Console { get; private set; }
+
+        /// <summary>
+        ///     The Node Library.
+        /// </summary>
+        public NodeLibraryViewModel Library { get; private set; }
 
         /// <summary>
         ///     Adds a new, blank note to the active workspace.

@@ -23,11 +23,6 @@ namespace Dynamo.UI.Wpf.ViewModels
         }
     }
 
-    public interface ISelectable
-    {
-        IObservable<bool> SelectionChangedStream { get; }
-    }
-
     public class WorkspaceViewModel : AWorkspaceViewModel
     {
         /* Properties */

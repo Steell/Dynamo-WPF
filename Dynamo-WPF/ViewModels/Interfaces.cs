@@ -10,6 +10,7 @@ namespace Dynamo.UI.Wpf.ViewModels
         ICommand SelectNeighborsCommand { get; }
         ICommand DeleteSelectionCommand { get; }
         ICommand SelectAllCommand { get; }
+        ICommand NewNodeCommand { get; }
     }
 
     public interface ICanExportSTL
