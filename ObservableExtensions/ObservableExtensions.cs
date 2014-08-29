@@ -22,7 +22,6 @@ namespace ObservableExtensions
         ///     Projects each element of an observable sequence into consecutive non-overlapping
         ///     buffers containing simultaneous occurrences.
         /// </summary>
-        /// <typeparam name="T">Type of elements of the observable sequence.</typeparam>
         /// <param name="observable">An observable sequence.</param>
         public static IObservable<IList<T>> Buffer<T>(this IObservable<T> observable)
         {
@@ -33,9 +32,6 @@ namespace ObservableExtensions
         ///     Samples the source observable sequence using a sampler sequence; whenever the
         ///     sampler produces a value, it is combined with the latest value from the source.
         /// </summary>
-        /// <typeparam name="TSample"/>
-        /// <typeparam name="TSampler"/>
-        /// <typeparam name="TResult"/>
         /// <param name="source">Source observable sequence.</param>
         /// <param name="sampler">Sampler observable sequence.</param>
         /// <param name="selector">Combines values from the source and the sampler.</param>
@@ -50,7 +46,6 @@ namespace ObservableExtensions
         /// <summary>
         ///     Creates a new Observable by repeating the given function forever.
         /// </summary>
-        /// <typeparam name="T">Type of elements that the observable sequence produces.</typeparam>
         /// <param name="func">Function used to generate new elements.</param>
         public static IObservable<T> Generate<T>(Func<T> func)
         {
@@ -61,7 +56,6 @@ namespace ObservableExtensions
         ///     Subscribes to the given observable, displaying its updates to the
         ///     Console.
         /// </summary>
-        /// <typeparam name="T">Type of elements of the observable sequence.</typeparam>
         /// <param name="source">Observable sequence to dump.</param>
         /// <param name="name">Label used in the printouts.</param>
         public static IDisposable Dump<T>(this IObservable<T> source, string name)
@@ -82,7 +76,6 @@ namespace ObservableExtensions
         /// <summary>
         ///     Creates a serialized stream of updates from a given observable sequence.
         /// </summary>
-        /// <typeparam name="T"/>
         /// <param name="source">Observable sequence to serialize.</param>
         /// <param name="name">Label used in the output strings.</param>
         public static IObservable<string> SerializeStream<T>(
@@ -109,7 +102,6 @@ namespace ObservableExtensions
         ///     Subscribes to either a "true" or "false" stream based on booleans produced by the
         ///     source sequence.
         ///  </summary>
-        /// <typeparam name="T"/>
         /// <param name="source">
         ///     Observable sequence of bools. Whenever a value is produced, change subscription to
         ///     the corresponding branch.
@@ -147,9 +139,6 @@ namespace ObservableExtensions
         ///     second observable sequence, then combines them with a given selector function to
         ///     produce new values.
         /// </summary>
-        /// <typeparam name="T"/>
-        /// <typeparam name="TSource1"/>
-        /// <typeparam name="TSource2"/>
         /// <param name="first">Observable sequence to listen to first.</param>
         /// <param name="second">Observable sequence to listen to second.</param>
         /// <param name="selector">
@@ -164,22 +153,53 @@ namespace ObservableExtensions
         }
 
         /// <summary>
-        /// 
+        ///     Returns a new observable that produces a buffer of previous results from the source
+        ///     observable.
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="source"></param>
-        /// <param name="count"></param>
-        /// <param name="onlyAtCapacity"></param>
-        /// <returns></returns>
-        public static IObservable<IEnumerable<T>> BufferOverlap<T>(this IObservable<T> source, int count, bool onlyAtCapacity=false)
+        /// <param name="source">The input observable.</param>
+        /// <param name="count">Amount of values from the source to remember.</param>
+        /// <param name="onlyAtCapacity">
+        ///     When true, result will only produce values when the buffer is full. Equivalent to
+        ///     source.BufferOverlap(count).Skip(count)
+        /// </param>
+        public static IObservable<IEnumerable<T>> BufferOverlap<T>(
+            this IObservable<T> source, int count, bool onlyAtCapacity=false)
         {
             var result = source.Scan(ImmutableQueue<T>.Empty, (queue, arg2) => queue.Enqueue(arg2));
             return onlyAtCapacity ? result.Skip(count - 1) : result;
         }
 
         /// <summary>
+        ///     Returns a new observable that triggers on the second and subsequent triggerings of 
+        ///     the input observable. The Nth triggering of the input observable passes the
+        ///     arguments from the N-1th and Nth triggering as a pair. The argument passed to the 
+        ///     N-1th triggering is held in hidden internal state until the Nth triggering occurs.
+        /// </summary>
+        /// <param name="source">The input observable.</param>
+        public static IObservable<Pair<T>> Pairwise<T>(this IObservable<T> source)
+        {
+            var def = default(T);
+            return source.Scan(new Pair<T>(def, def), (pair, t) => new Pair<T>(t, pair.Current));
+        }
+
+        /// <summary>
         ///     Sequence of lines input from the Console.
         /// </summary>
         public static IObservable<string> ConsoleLineReader = Generate(Console.ReadLine);
+    }
+
+    /// <summary>
+    ///     Contains a pair of values representing a current and previous result of a computation.
+    /// </summary>
+    public struct Pair<T>
+    {
+        public readonly T Current;
+        public readonly T Previous;
+
+        public Pair(T current, T previous) : this()
+        {
+            Current = current;
+            Previous = previous;
+        }
     }
 }

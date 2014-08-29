@@ -6,14 +6,14 @@
     /// <summary>
     ///     Information describing a custom node creation action.
     /// </summary>
-    public class NewCustomNodeEventArgs : Models.NewCustomNodeEventArgs
+    public class CustomNodeWorkspaceState : Models.CustomNodeWorkspaceState
     {
         /// <summary>
         ///     Should this new custom node become the active workspace?
         /// </summary>
         public bool MakeActive { get; private set; }
 
-        public NewCustomNodeEventArgs(
+        public CustomNodeWorkspaceState(
             string name, string category, string description="", bool makeActive=true)
             : base(name, category, description)
         {
@@ -24,7 +24,7 @@
     /// <summary>
     ///     Information describing a home workspace creation actie.
     /// </summary>
-    public class NewHomeWorkspaceEventArgs : Models.NewHomeWorkspaceEventArgs
+    public class NewHomeWorkspaceEventArgs : Models.HomeWorkspaceState
     {
         public bool MakeActive { get; private set; }
 

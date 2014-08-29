@@ -43,6 +43,7 @@
       <HintPath>..\packages\Microsoft.Bcl.Immutable.1.0.34\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath>
     </Reference>
     <Reference Include="System.Core" />
+    <Reference Include="System.Numerics" />
     <Reference Include="System.Reactive.Core">
       <HintPath>..\packages\Rx-Core.2.2.4\lib\net45\System.Reactive.Core.dll</HintPath>
     </Reference>
@@ -70,7 +71,7 @@
     <Compile Include="ConsoleModel.cs" />
     <Compile Include="Dynamo.cs" />
     <Compile Include="LacingStrategy.cs" />
-    <Compile Include="NewCustomNodeEventArgs.cs" />
+    <Compile Include="CustomNodeWorkspaceState.cs" />
     <Compile Include="Node.cs" />
     <Compile Include="NodeSearch.cs" />
     <Compile Include="Note.cs" />

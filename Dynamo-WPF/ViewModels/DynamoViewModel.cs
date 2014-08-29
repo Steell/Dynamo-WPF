@@ -67,29 +67,15 @@ namespace Dynamo.UI.Wpf.ViewModels
 
             var newCustomNodeCmd = ReactiveCommand.Create();
             NewCustomNode = newCustomNodeCmd;
-            var newCustomNodeStream = newCustomNodeCmd.Cast<NewCustomNodeEventArgs>();
+            var newCustomNodeStream = newCustomNodeCmd.Cast<CustomNodeWorkspaceState>();
 
             var newHomeWorkspaceCmd = ReactiveCommand.Create();
             NewHomeWorkspace = newHomeWorkspaceCmd;
             var newHomeWorkspaceStream = newHomeWorkspaceCmd.Cast<NewHomeWorkspaceEventArgs>();
 
-            var displayStartPageCmd =
-                ReactiveCommand.Create(
-                    activeWorkspaceStream.Select(x => !(x is StartPageViewModel)));
-            DisplayStartPage = displayStartPageCmd;
-            var displayStartPageStream = displayStartPageCmd.Select(_ => Unit.Default);
-
             var openWorkspaceCmd = ReactiveCommand.Create();
             OpenWorkspace = openWorkspaceCmd;
             var openWorkspaceStream = openWorkspaceCmd.Cast<string>();
-
-            var showConsoleCmd = ReactiveCommand.Create();
-            ShowConsole = showConsoleCmd;
-            var showConsoleStream = showConsoleCmd;
-
-            var exitDynamoCmd = ReactiveCommand.Create();
-            ExitDynamo = exitDynamoCmd;
-            var exitDynamoStream = exitDynamoCmd;
 
             var importLibraryCmd = ReactiveCommand.Create();
             ImportLibrary = importLibraryCmd;
@@ -103,9 +89,8 @@ namespace Dynamo.UI.Wpf.ViewModels
             var model = new DynamoModel(
                 customNodes: newCustomNodeStream,
                 homeWorkspaces: newHomeWorkspaceStream,
-                displayStartPage: displayStartPageStream,
-                openWorkspace: openWorkspaceStream,
                 importLibrary: importLibraryStream,
+                openWorkspaceFile: openWorkspaceStream,
                 runAuto: runAutoStream
             );
 
@@ -115,8 +100,23 @@ namespace Dynamo.UI.Wpf.ViewModels
                     .ToProperty(this, x => x.RecentFiles);
 
             //TODO: these should be initialized from the model
-            Console = new ConsoleViewModel(consoleStreams);
+            Console = new ConsoleViewModel(consoleStreams.Merge(model.ConsoleStream));
             Library = new NodeLibraryViewModel();
+
+
+            var showConsoleCmd = ReactiveCommand.Create();
+            ShowConsole = showConsoleCmd;
+            var showConsoleStream = showConsoleCmd;
+
+            var exitDynamoCmd = ReactiveCommand.Create();
+            ExitDynamo = exitDynamoCmd;
+            var exitDynamoStream = exitDynamoCmd;
+
+            var displayStartPageCmd =
+                ReactiveCommand.Create(
+                    activeWorkspaceStream.Select(x => !(x is StartPageViewModel)));
+            DisplayStartPage = displayStartPageCmd;
+            var displayStartPageStream = displayStartPageCmd.Select(_ => Unit.Default);
         }
 
         #region Properties
@@ -323,13 +323,13 @@ namespace Dynamo.UI.Wpf.ViewModels
 
         /// <summary>
         ///     Creates a new, blank Custom Node workspace with name, description, and category
-        ///     taken from the given NewCustomNodeEventArgs argument.
+        ///     taken from the given CustomNodeWorkspaceState argument.
         /// </summary>
         public ICommand NewCustomNode { get; private set; }
 
         /// <summary>
         ///     Creates a new, blank Home workspace initialized from the given
-        ///     NewHomeWorkspaceEventArgs argument.
+        ///     HomeWorkspaceState argument.
         /// </summary>
         public ICommand NewHomeWorkspace { get; private set; }
 

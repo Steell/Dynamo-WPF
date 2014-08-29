@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Numerics;
 using System.Reactive.Linq;
 using ObservableExtensions;
 
@@ -14,28 +15,18 @@ namespace Dynamo.UI.Models
         /// <summary>
         ///     Observable sequence of new connectors
         /// </summary>
-        public IObservable<Connector<TNode, TMetaData>> ConnectorCreatedStream
-        {
-            get;
-            private set;
-        }
+        public IObservable<Connector<TNode, TMetaData>> ConnectorCreatedStream { get; private set; }
 
         /// <summary>
         ///     Observable sequence of the start of a new connection action
         /// </summary>
-        public IObservable<Connection<TNode, TMetaData>> BeginNewConnectionStream
-        {
-            get;
-            private set;
-        }
+        public IObservable<Connection<TNode, TMetaData>> BeginNewConnectionStream { get;
+            private set; }
 
         /// <summary>
         ///     Observable sequence of the end of a new connection action
         /// </summary>
-        public IObservable<Connection<TNode, TMetaData>?> EndNewConnectionStream
-        {
-            get;
-            private set;
+        public IObservable<Connection<TNode, TMetaData>?> EndNewConnectionStream { get; private set;
         }
 
         public GraphModel(
@@ -48,9 +39,10 @@ namespace Dynamo.UI.Models
             ConnectorCreatedStream =
                 // Listen for a connection start event, then a connection end event
                 BeginNewConnectionStream.FollowedBy(
-                    EndNewConnectionStream, NewConnectorData.Create)
-                    .Switch()                      // Only track newest connection
-                    .Where(c => c.IsValid())       // Ignore cancelled connections
+                    EndNewConnectionStream,
+                    NewConnectorData.Create)
+                    .Switch() // Only track newest connection
+                    .Where(c => c.IsValid()) // Ignore cancelled connections
                     .Select(c => c.ToConnector()); // Build connector from data
         }
 
@@ -102,11 +94,7 @@ namespace Dynamo.UI.Models
         /// <summary>
         ///     Observable sequence of deleted connectors
         /// </summary>
-        public IObservable<Connector<TNode, TMetaData>> ConnectorDeletedStream
-        {
-            get;
-            private set;
-        }
+        public IObservable<Connector<TNode, TMetaData>> ConnectorDeletedStream { get; private set; }
 
         public GraphModelWithDeletion(
             IObservable<Connection<TNode, TMetaData>> beginNewConnectionStream,
@@ -122,17 +110,17 @@ namespace Dynamo.UI.Models
                     connector =>
                         nodeDeletedStream // ...listen for a node deletion...
 
-                            // ...where the node deleted was attached to the connector.
-                            .Where(
-                                node => connector.Start.Node.Equals(node)
-                                        || connector.End.Node.Equals(node))
+                        // ...where the node deleted was attached to the connector.
+                        .Where(
+                            node => connector.Start.Node.Equals(node)
+                                || connector.End.Node.Equals(node))
 
-                            .FirstAsync()           // Only listen for one occurence
-                            .Select(_ => connector) // Produce the hanging connector.
+                        .FirstAsync() // Only listen for one occurence
+                        .Select(_ => connector) // Produce the hanging connector.
 
-                            // Stop listening once the connector has been deleted.
-                            .TakeUntil(
-                                connectorDeletedStream.Where(c => connector.Equals(c))));
+                        // Stop listening once the connector has been deleted.
+                        .TakeUntil(
+                            connectorDeletedStream.Where(c => connector.Equals(c))));
 
             var validDeletions =
                 // Make sure we only broadcast deletions of connectors that actually exist
@@ -169,22 +157,74 @@ namespace Dynamo.UI.Models
                 nodeDeletedStream,
 
                 //Disconnects trigger deletions
-                disconnectStream)
-        { }
+                disconnectStream) { }
     }
 
-    public class Workspace : GraphModelWithDisconnect<Node, int>
+    public interface IWorkspace : ITokenizeable<BigInteger>
+    {
+    }
+
+    public class Workspace : GraphModelWithDisconnect<Node, int>, IWorkspace
     {
         public Workspace(
+            BigInteger token,
             IObservable<Connector<Node, int>> disconnectStream,
             IObservable<Connection<Node, int>> beginNewConnectionStream,
-            IObservable<Connection<Node, int>?> endNewConnectionStream, 
+            IObservable<Connection<Node, int>?> endNewConnectionStream,
+            IObservable<Node> nodeCreatedStream,
             IObservable<Node> nodeDeletedStream)
             : base(
                 disconnectStream,
                 beginNewConnectionStream,
                 endNewConnectionStream,
                 nodeDeletedStream)
-        { }
+        {
+            this.token = token;
+        }
+
+        #region ITokenizeable<int> implementation
+        private readonly BigInteger token;
+
+        BigInteger ITokenizeable<BigInteger>.Token
+        {
+            get { return token; }
+        }
+        #endregion
+    }
+
+    public class HomeWorkspace : Workspace
+    {
+        public HomeWorkspace(
+            BigInteger token,
+            HomeWorkspaceState initState,
+            IObservable<Connector<Node, int>> disconnectStream = null,
+            IObservable<Connection<Node, int>> beginNewConnectionStream = null,
+            IObservable<Connection<Node, int>?> endNewConnectionStream = null,
+            IObservable<Node> nodeCreatedStream = null,
+            IObservable<Node> nodeDeletedStream = null)
+            : base(
+                token,
+                disconnectStream,
+                beginNewConnectionStream,
+                endNewConnectionStream,
+                nodeCreatedStream,
+                nodeDeletedStream) { }
+    }
+
+    public class CustomNodeWorkspace : Workspace
+    {
+        public CustomNodeWorkspace(
+            BigInteger token,
+            CustomNodeWorkspaceState initState,
+            IObservable<Connector<Node, int>> disconnectStream = null,
+            IObservable<Connection<Node, int>> beginNewConnectionStream = null,
+            IObservable<Connection<Node, int>?> endNewConnectionStream = null,
+            IObservable<Node> nodeDeletedStream = null)
+            : base(
+                token,
+                disconnectStream,
+                beginNewConnectionStream,
+                endNewConnectionStream,
+                nodeDeletedStream) { }
     }
 }
