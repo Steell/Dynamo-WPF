@@ -6,6 +6,7 @@ using System.Reactive.Subjects;
 using Dynamo.UI.Models;
 using NUnit.Framework;
 using ObservableExtensions;
+using ObservableExtensions.Experimental;
 
 namespace Sandbox
 {
@@ -29,6 +30,26 @@ namespace Sandbox
             }
         }
          * */
+
+        struct Butt
+        {
+            public object Hole;
+            public Butt(object hole) : this()
+            {
+                Hole = hole;
+            }
+        }
+
+        [Test]
+        public static void StructEquality()
+        {
+            var o = new object();
+            var a = new Butt(o);
+            var b = new Butt(o);
+
+            Assert.IsTrue(a.Equals(b));
+            Assert.IsFalse(a.Equals(new Butt(new object())));
+        }
 
 
         [Test]
