@@ -160,8 +160,9 @@ namespace Dynamo.UI.Models
                 disconnectStream) { }
     }
 
-    public interface IWorkspace : ITokenizeable<BigInteger>
+    public interface IWorkspace //: ITokenizeable<BigInteger>
     {
+        BigInteger Token { get; }
     }
 
     public class Workspace : GraphModelWithDisconnect<Node, int>, IWorkspace
@@ -185,7 +186,7 @@ namespace Dynamo.UI.Models
         #region ITokenizeable<int> implementation
         private readonly BigInteger token;
 
-        BigInteger ITokenizeable<BigInteger>.Token
+        public BigInteger Token //ITokenizeable<BigInteger>.Token
         {
             get { return token; }
         }
@@ -219,12 +220,14 @@ namespace Dynamo.UI.Models
             IObservable<Connector<Node, int>> disconnectStream = null,
             IObservable<Connection<Node, int>> beginNewConnectionStream = null,
             IObservable<Connection<Node, int>?> endNewConnectionStream = null,
+            IObservable<Node> nodeCreatedStream = null,
             IObservable<Node> nodeDeletedStream = null)
             : base(
                 token,
                 disconnectStream,
                 beginNewConnectionStream,
                 endNewConnectionStream,
+                nodeCreatedStream,
                 nodeDeletedStream) { }
     }
 }
